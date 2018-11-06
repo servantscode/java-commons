@@ -1,9 +1,11 @@
 package org.servantscode.commons;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.Comparator;
 
 public class AutoCompleteComparator implements Comparator<String> {
-
     private final String search;
 
     public AutoCompleteComparator(String search) {
