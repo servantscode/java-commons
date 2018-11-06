@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="sccommons">
+    <output-path>$PROJECT_DIR$/out/artifacts/sccommons</output-path>
+    <root id="archive" name="sccommons.jar">
+      <element id="module-output" name="java-commons_main" />
+    </root>
+  </artifact>
+</component>
