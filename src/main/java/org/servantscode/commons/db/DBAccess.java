@@ -24,7 +24,7 @@ public class DBAccess {
         source.setPassword("servant!IsH3r3");
     }
 
-    protected Connection getConnection() {
+    protected static Connection getConnection() {
         try {
             return source.getConnection();
         } catch (SQLException e) {
@@ -32,7 +32,7 @@ public class DBAccess {
         }
     }
 
-    protected java.sql.Date convert(Date input) {
+    protected static java.sql.Date convert(Date input) {
         if(input == null) return null;
         return new java.sql.Date(input.getTime());
     }
