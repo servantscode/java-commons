@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.Date;
 
 public class DBAccess {
@@ -35,5 +36,9 @@ public class DBAccess {
     protected static java.sql.Date convert(Date input) {
         if(input == null) return null;
         return new java.sql.Date(input.getTime());
+    }
+
+    protected static java.sql.Date convert(LocalDate input) {
+        return java.sql.Date.valueOf(input);
     }
 }
