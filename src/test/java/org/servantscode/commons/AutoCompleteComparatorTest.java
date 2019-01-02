@@ -5,7 +5,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 
-public class testAutoCompleteComparator {
+public class AutoCompleteComparatorTest {
 
     @Test
     public void testSort() {
