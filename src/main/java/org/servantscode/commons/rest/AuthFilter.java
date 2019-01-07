@@ -8,21 +8,28 @@ import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
+import org.servantscode.commons.StringUtils;
 
+import javax.annotation.Priority;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
 import java.security.Principal;
 import java.util.List;
+import java.util.UUID;
 
 import static org.servantscode.commons.StringUtils.isEmpty;
 
 @Provider
+@Priority(2000)
 public class AuthFilter implements ContainerRequestFilter {
-    private static final Logger LOGGER = LogManager.getLogger(AuthFilter.class);
+    private static final Logger LOG = LogManager.getLogger(AuthFilter.class);
 
     private static final Algorithm algorithm = Algorithm.HMAC256("secret");
     private static final JWTVerifier VERIFIER = JWT.require(algorithm)
@@ -30,18 +37,42 @@ public class AuthFilter implements ContainerRequestFilter {
             .withIssuer("Servant's Code")
             .build();
 
+    @Context
+    private HttpServletRequest request;
+
     @Override
     public void filter(ContainerRequestContext requestContext) {
-        // No token required for login.
-        // TODO: Is there a better way to do this with routing?
-
+        //Allow OPTIONS calls for CORS
         if(requestContext.getMethod().equalsIgnoreCase("OPTIONS"))
             return;
 
+        ThreadContext.put("request.method", requestContext.getMethod());
+        ThreadContext.put("request.path", requestContext.getUriInfo().getPath());
+        ThreadContext.put("request.orgin", request.getRemoteAddr());
+
+        if(isEmpty(ThreadContext.get("transaction.id")))
+            ThreadContext.put("transaction.id", UUID.randomUUID().toString());
+
+        // No token required for login.
+        // TODO: Is there a better way to do this with routing?
         if(requestContext.getUriInfo().getPath().equalsIgnoreCase("login") &&
                 requestContext.getMethod().equalsIgnoreCase("POST"))
             return;
 
+        try {
+            String token = parseAuthHeader(requestContext);
+            DecodedJWT jwt = VERIFIER.verify(token);
+            SecurityContext context = createContext(requestContext.getUriInfo(), jwt);
+            requestContext.setSecurityContext(context);
+            ThreadContext.put("user", context.getUserPrincipal().getName());
+        } catch (JWTVerificationException e) {
+            LOG.warn("Invalid jwt token presented.", e);
+            throw new NotAuthorizedException("Not Authorized");
+        }
+    }
+
+    // ----- Private -----
+    private String parseAuthHeader(ContainerRequestContext requestContext) {
         List<String> authHeaders = requestContext.getHeaders().get("Authorization");
         if(authHeaders == null || authHeaders.size() != 1)
             throw new NotAuthorizedException("Not Authorized");
@@ -53,17 +84,9 @@ public class AuthFilter implements ContainerRequestFilter {
         String[] headerBits = authHeader.split("\\s");
         if(headerBits.length != 2 || !headerBits[0].equalsIgnoreCase("Bearer"))
             throw new NotAuthorizedException("Not Authorized");
-
-        try {
-            DecodedJWT jwt = VERIFIER.verify(headerBits[1]);
-            requestContext.setSecurityContext(createContext(requestContext.getUriInfo(), jwt));
-        } catch (JWTVerificationException e) {
-            LOGGER.warn("Invalid jwt token presented.", e);
-            throw new NotAuthorizedException("Not Authorized");
-        }
+        return headerBits[1];
     }
 
-    // ----- Private -----
     private SecurityContext createContext(final UriInfo uriInfo, final DecodedJWT jwt) {
         return new SecurityContext() {
             @Override
