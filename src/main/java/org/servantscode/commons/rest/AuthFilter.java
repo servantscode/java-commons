@@ -46,6 +46,7 @@ public class AuthFilter implements ContainerRequestFilter {
         if(requestContext.getMethod().equalsIgnoreCase("OPTIONS"))
             return;
 
+        ThreadContext.put("request.received", Long.toString(System.currentTimeMillis()));
         ThreadContext.put("request.method", requestContext.getMethod());
         ThreadContext.put("request.path", requestContext.getUriInfo().getPath());
         ThreadContext.put("request.orgin", request.getRemoteAddr());

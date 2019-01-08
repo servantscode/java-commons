@@ -19,22 +19,25 @@ public class ResponseLoggingFilter implements ContainerResponseFilter {
     public void filter(ContainerRequestContext requestContext,
                        ContainerResponseContext responseContext) {
 
+
+        if(requestContext.getMethod().equalsIgnoreCase("OPTIONS")) {
+            return;
+        }
+
         String startStr = ThreadContext.get("request.received");
         long runtimeMillis = 0;
-        if(startStr == null) {
+        if(startStr != null) {
             runtimeMillis = System.currentTimeMillis() - Long.parseLong(startStr);
             ThreadContext.put("request.runtime", Long.toString(runtimeMillis));
         }
 
-        if(!requestContext.getMethod().equalsIgnoreCase("OPTIONS")) {
-            String msg = String.format("Service %s %s completed.",
-                    ThreadContext.get("request.method"),
-                    ThreadContext.get("request.path"));
-            if(runtimeMillis > 0)
-                msg += " Completed in: " + runtimeMillis + " msec. ";
-            msg += " Response: " + responseContext.getStatus();
+        String msg = String.format("%s %s. ",
+                ThreadContext.get("request.method"),
+                ThreadContext.get("request.path"));
+        if(runtimeMillis > 0)
+            msg += " Completed in: " + runtimeMillis + " msec.";
+        msg += " Response: " + responseContext.getStatus();
 
-            LOG.info(msg);
-        }
+        LOG.info(msg);
     }
 }
