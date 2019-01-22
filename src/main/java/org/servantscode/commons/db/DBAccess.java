@@ -4,8 +4,9 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.LocalDate;
-import java.util.Date;
+import java.sql.Timestamp;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 public class DBAccess {
 
@@ -33,12 +34,13 @@ public class DBAccess {
         }
     }
 
-    protected static java.sql.Date convert(Date input) {
-        if(input == null) return null;
-        return new java.sql.Date(input.getTime());
+    protected static Timestamp convert(ZonedDateTime input) {
+        //Translate zone to UTC then save
+        return Timestamp.valueOf(input.withZoneSameInstant(ZoneId.of("Z")).toLocalDateTime());
     }
 
-    protected static java.sql.Date convert(LocalDate input) {
-        return java.sql.Date.valueOf(input);
-    }
+    protected static ZonedDateTime convert(Timestamp input) {
+        //Set zone to UTC
+        return ZonedDateTime.ofInstant(input.toInstant(), ZoneId.of("Z"));
+    };
 }

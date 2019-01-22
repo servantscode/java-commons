@@ -14,6 +14,7 @@ repositories {
 }
 
 dependencies {
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.9.8'
     implementation group: 'com.auth0', name: 'java-jwt',  version: '3.4.1'
     implementation group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: '2.27'
     implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.11.1'
