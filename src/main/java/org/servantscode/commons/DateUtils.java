@@ -3,10 +3,9 @@ package org.servantscode.commons;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
 
 import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
@@ -18,7 +17,7 @@ public class DateUtils {
     }
 
     public static ZonedDateTime parse(String input, TemporalAdjuster adjuster) {
-        return parse(input, ZonedDateTime.ofInstant(Instant.now().with(adjuster), ZoneId.systemDefault()));
+        return parse(input, ZonedDateTime.now().with(adjuster));
     }
 
     public static ZonedDateTime parse(String input, ZonedDateTime defaultValue) {
