@@ -29,4 +29,10 @@ public class DateUtils {
             return defaultValue;
         }
     }
+
+    public static ZonedDateTime toUTC(ZonedDateTime input) {
+        if(input == null)
+            return null;
+        return ZonedDateTime.ofInstant(input.toInstant(), ZoneId.of("Z"));
+    }
 }
