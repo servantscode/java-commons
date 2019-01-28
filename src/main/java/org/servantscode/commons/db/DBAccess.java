@@ -36,11 +36,11 @@ public class DBAccess {
 
     protected static Timestamp convert(ZonedDateTime input) {
         //Translate zone to UTC then save
-        return Timestamp.valueOf(input.withZoneSameInstant(ZoneId.of("Z")).toLocalDateTime());
+        return input != null? Timestamp.valueOf(input.withZoneSameInstant(ZoneId.of("Z")).toLocalDateTime()): null;
     }
 
     protected static ZonedDateTime convert(Timestamp input) {
         //Set zone to UTC
-        return ZonedDateTime.ofInstant(input.toInstant(), ZoneId.of("Z"));
+        return input != null? ZonedDateTime.ofInstant(input.toInstant(), ZoneId.of("Z")): null;
     };
 }
