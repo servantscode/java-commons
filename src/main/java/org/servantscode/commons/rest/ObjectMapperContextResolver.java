@@ -8,7 +8,7 @@ import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 
 @Provider
-public class ObjectMapperContextRespolver implements ContextResolver<ObjectMapper> {
+public class ObjectMapperContextResolver implements ContextResolver<ObjectMapper> {
     private final ObjectMapper MAPPER;
 
     {
