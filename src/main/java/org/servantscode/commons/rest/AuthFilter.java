@@ -9,7 +9,8 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
-import org.servantscode.commons.StringUtils;
+import org.servantscode.commons.security.PermissionManager;
+import org.servantscode.commons.security.SCSecurityContext;
 
 import javax.annotation.Priority;
 import javax.servlet.http.HttpServletRequest;
@@ -20,7 +21,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
-import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
 
@@ -63,6 +63,7 @@ public class AuthFilter implements ContainerRequestFilter {
         try {
             String token = parseAuthHeader(requestContext);
             DecodedJWT jwt = VERIFIER.verify(token);
+            enableRole(jwt);
             SecurityContext context = createContext(requestContext.getUriInfo(), jwt);
             requestContext.setSecurityContext(context);
             ThreadContext.put("user", context.getUserPrincipal().getName());
@@ -88,31 +89,15 @@ public class AuthFilter implements ContainerRequestFilter {
         return headerBits[1];
     }
 
-    private SecurityContext createContext(final UriInfo uriInfo, final DecodedJWT jwt) {
-        return new SecurityContext() {
-            @Override
-            public Principal getUserPrincipal() {
-                return jwt::getSubject;
-            }
+    private SecurityContext createContext(UriInfo uriInfo, DecodedJWT jwt) {
+        return new SCSecurityContext(uriInfo, jwt);
+    }
 
-            @Override
-            public boolean isUserInRole(String role) {
-                Claim claim = jwt.getClaim("role");
-                if(claim == null)
-                    return false;
-
-                return claim.asString().equalsIgnoreCase(role);
-            }
-
-            @Override
-            public boolean isSecure() {
-                return uriInfo.getAbsolutePath().toString().startsWith("https");
-            }
-
-            @Override
-            public String getAuthenticationScheme() {
-                return "JWT";
-            }
-        };
+    private void enableRole(DecodedJWT jwt) {
+        Claim claim = jwt.getClaim("permissions");
+        if(claim != null) {
+            String[] userPerms = claim.asArray(String.class);
+            PermissionManager.enablePermissions(userPerms);
+        }
     }
 }
