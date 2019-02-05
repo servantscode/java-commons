@@ -31,7 +31,7 @@ import static org.servantscode.commons.StringUtils.isEmpty;
 public class AuthFilter implements ContainerRequestFilter {
     private static final Logger LOG = LogManager.getLogger(AuthFilter.class);
 
-    private static final Algorithm algorithm = Algorithm.HMAC256("secret");
+    private static final Algorithm algorithm = Algorithm.HMAC256("GV^~me\\KO{]Z'hdUL?Ls[7b<EAWfC0\"2N_ (`m0&}?aK%?j#.'_p[s{Jatv2(@N5");
     private static final JWTVerifier VERIFIER = JWT.require(algorithm)
             .acceptLeeway(1)   //1 sec leeway for date checks to account for clock slop
             .withIssuer("Servant's Code")
