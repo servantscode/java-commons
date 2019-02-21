@@ -13,4 +13,11 @@ public class SCServiceBase {
         if(!PermissionManager.canUser(permission))
             throw new ForbiddenException("Requested action is not available");
     }
+
+    protected boolean userHasAccess(String permission) {
+        if(!PermissionManager.hasEnabledPermissions())
+            return false;
+
+        return PermissionManager.canUser(permission);
+    }
 }
