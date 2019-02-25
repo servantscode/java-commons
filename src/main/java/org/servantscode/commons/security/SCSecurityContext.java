@@ -18,9 +18,7 @@ public class SCSecurityContext implements SecurityContext {
     }
 
     @Override
-    public Principal getUserPrincipal() {
-        return jwt::getSubject;
-    }
+    public Principal getUserPrincipal() { return new SCPrincipal(jwt); }
 
     @Override
     public boolean isUserInRole(String role) {
