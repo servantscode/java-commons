@@ -9,6 +9,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
+import org.servantscode.commons.EnvProperty;
 import org.servantscode.commons.security.PermissionManager;
 import org.servantscode.commons.security.SCSecurityContext;
 
@@ -31,7 +32,9 @@ import static org.servantscode.commons.StringUtils.isEmpty;
 public class AuthFilter implements ContainerRequestFilter {
     private static final Logger LOG = LogManager.getLogger(AuthFilter.class);
 
-    private static final Algorithm algorithm = Algorithm.HMAC256("GV^~me\\KO{]Z'hdUL?Ls[7b<EAWfC0\"2N_ (`m0&}?aK%?j#.'_p[s{Jatv2(@N5");
+    private static final String SIGNING_KEY = EnvProperty.get("JWT_KEY");
+
+    private static final Algorithm algorithm = Algorithm.HMAC256(SIGNING_KEY);
     private static final JWTVerifier VERIFIER = JWT.require(algorithm)
             .acceptLeeway(1)   //1 sec leeway for date checks to account for clock slop
             .withIssuer("Servant's Code")
