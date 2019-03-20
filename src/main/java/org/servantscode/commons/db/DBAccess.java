@@ -36,7 +36,6 @@ public class DBAccess {
         String jdbcUrl = format("jdbc:postgresql://%s:%s/%s", DB_HOST, DB_PORT, DB_NAME);
         LOG.debug("Connecting to: " + jdbcUrl);
         source.setJdbcUrl(jdbcUrl);
-        LOG.debug("With credentials: " + DB_USER + ":" + DB_PASSWORD);
         source.setUsername(DB_USER);
         source.setPassword(DB_PASSWORD);
     }
