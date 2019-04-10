@@ -59,7 +59,8 @@ public class AuthFilter implements ContainerRequestFilter {
 
         // No token required for login.
         // TODO: Is there a better way to do this with routing?
-        if(requestContext.getUriInfo().getPath().equalsIgnoreCase("login") &&
+        if((requestContext.getUriInfo().getPath().equalsIgnoreCase("login") ||
+            requestContext.getUriInfo().getPath().equalsIgnoreCase("password")) &&
                 requestContext.getMethod().equalsIgnoreCase("POST"))
             return;
 
