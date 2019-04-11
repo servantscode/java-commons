@@ -25,6 +25,7 @@ import javax.ws.rs.ext.Provider;
 import java.util.List;
 import java.util.UUID;
 
+import static java.util.Arrays.asList;
 import static org.servantscode.commons.StringUtils.isEmpty;
 
 @Provider
@@ -33,6 +34,8 @@ public class AuthFilter implements ContainerRequestFilter {
     private static final Logger LOG = LogManager.getLogger(AuthFilter.class);
 
     private static final String SIGNING_KEY = EnvProperty.get("JWT_KEY");
+
+    private static final List<String> OPEN_PATHS = asList("login", "password", "password/reset");
 
     private static final Algorithm algorithm = Algorithm.HMAC256(SIGNING_KEY);
     private static final JWTVerifier VERIFIER = JWT.require(algorithm)
@@ -57,16 +60,17 @@ public class AuthFilter implements ContainerRequestFilter {
         if(isEmpty(ThreadContext.get("transaction.id")))
             ThreadContext.put("transaction.id", UUID.randomUUID().toString());
 
-        // No token required for login.
+        String token = parseOptionalAuthHeader(requestContext);
+
+        // No token required for login and password resets...
         // TODO: Is there a better way to do this with routing?
-        if((requestContext.getUriInfo().getPath().equalsIgnoreCase("login") ||
-            requestContext.getUriInfo().getPath().equalsIgnoreCase("password")) &&
-                requestContext.getMethod().equalsIgnoreCase("POST"))
+        String uriPath = requestContext.getUriInfo().getPath();
+        if(token == null && requestContext.getMethod().equalsIgnoreCase("POST") &&
+           OPEN_PATHS.stream().anyMatch(item -> item.equalsIgnoreCase(uriPath)))
             return;
 
         try {
-            String token = parseAuthHeader(requestContext);
-            DecodedJWT jwt = VERIFIER.verify(token);
+            DecodedJWT jwt = verifyAuthToken(token);
             enableRole(jwt);
             SecurityContext context = createContext(requestContext.getUriInfo(), jwt);
             requestContext.setSecurityContext(context);
@@ -78,19 +82,26 @@ public class AuthFilter implements ContainerRequestFilter {
     }
 
     // ----- Private -----
-    private String parseAuthHeader(ContainerRequestContext requestContext) {
+    private String parseOptionalAuthHeader(ContainerRequestContext requestContext) {
         List<String> authHeaders = requestContext.getHeaders().get("Authorization");
         if(authHeaders == null || authHeaders.size() != 1)
-            throw new NotAuthorizedException("Not Authorized");
+            return null;
 
         String authHeader = authHeaders.get(0);
         if(isEmpty(authHeader))
-            throw new NotAuthorizedException("Not Authorized");
+            return null;
 
         String[] headerBits = authHeader.split("\\s");
         if(headerBits.length != 2 || !headerBits[0].equalsIgnoreCase("Bearer"))
-            throw new NotAuthorizedException("Not Authorized");
+            return null;
         return headerBits[1];
+    }
+
+    private DecodedJWT verifyAuthToken(String token) {
+        if(isEmpty(token))
+            throw new NotAuthorizedException("Not Authorized");
+
+        return VERIFIER.verify(token);
     }
 
     private SecurityContext createContext(UriInfo uriInfo, DecodedJWT jwt) {

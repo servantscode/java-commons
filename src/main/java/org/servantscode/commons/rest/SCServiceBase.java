@@ -17,6 +17,9 @@ public class SCServiceBase {
     }
 
     protected int getUserId(SecurityContext context) {
+        if(context == null || context.getUserPrincipal() == null)
+            return -1;
+
         return ((SCPrincipal)context.getUserPrincipal()).getUserId();
     }
 
