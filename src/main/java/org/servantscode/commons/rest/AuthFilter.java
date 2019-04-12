@@ -35,7 +35,8 @@ public class AuthFilter implements ContainerRequestFilter {
 
     private static final String SIGNING_KEY = EnvProperty.get("JWT_KEY");
 
-    private static final List<String> OPEN_PATHS = asList("login", "password", "password/reset");
+    private static final List<String> OPTIONAL_TOKEN_PATHS = asList("password");
+    private static final List<String> OPEN_PATHS = asList("login", "password/reset");
 
     private static final Algorithm algorithm = Algorithm.HMAC256(SIGNING_KEY);
     private static final JWTVerifier VERIFIER = JWT.require(algorithm)
@@ -65,9 +66,14 @@ public class AuthFilter implements ContainerRequestFilter {
         // No token required for login and password resets...
         // TODO: Is there a better way to do this with routing?
         String uriPath = requestContext.getUriInfo().getPath();
-        if(token == null && requestContext.getMethod().equalsIgnoreCase("POST") &&
-           OPEN_PATHS.stream().anyMatch(item -> item.equalsIgnoreCase(uriPath)))
-            return;
+        if(requestContext.getMethod().equalsIgnoreCase("POST")) {
+            if(OPEN_PATHS.stream().anyMatch(item -> item.equalsIgnoreCase(uriPath)))
+                return;
+
+            if(token == null && OPTIONAL_TOKEN_PATHS.stream().anyMatch(item -> item.equalsIgnoreCase(uriPath)))
+                return;
+        }
+
 
         try {
             DecodedJWT jwt = verifyAuthToken(token);
