@@ -8,6 +8,16 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class ReflectionUtils {
+    public static Class<?> getDeepFieldType(Class<?> clazz, String fieldName) {
+        String[] fieldPath = fieldName.split("\\.");
+
+        Class<?> currentClazz = clazz;
+        for(String field: fieldPath)
+            currentClazz = getFieldType(currentClazz, field);
+
+        return currentClazz;
+    }
+
     public static Class<?> getFieldType(Class<?> clazz, String fieldName) {
         Method getter = getGetter(clazz, fieldName);
         if(getter == null)
