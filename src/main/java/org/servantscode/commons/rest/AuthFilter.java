@@ -35,6 +35,7 @@ public class AuthFilter implements ContainerRequestFilter {
 
     private static final String SIGNING_KEY = EnvProperty.get("JWT_KEY");
 
+    //Make sure these lists are lower cased for case-insensitive comparisons
     private static final List<String> OPTIONAL_TOKEN_PATHS = asList("password");
     private static final List<String> OPEN_PATHS = asList("login", "password/reset");
 
@@ -53,9 +54,10 @@ public class AuthFilter implements ContainerRequestFilter {
         if(requestContext.getMethod().equalsIgnoreCase("OPTIONS"))
             return;
 
+        String uriPath = requestContext.getUriInfo().getPath();
         ThreadContext.put("request.received", Long.toString(System.currentTimeMillis()));
         ThreadContext.put("request.method", requestContext.getMethod());
-        ThreadContext.put("request.path", requestContext.getUriInfo().getPath());
+        ThreadContext.put("request.path", uriPath);
         ThreadContext.put("request.orgin", request.getRemoteAddr());
 
         if(isEmpty(ThreadContext.get("transaction.id")))
@@ -65,26 +67,26 @@ public class AuthFilter implements ContainerRequestFilter {
 
         // No token required for login and password resets...
         // TODO: Is there a better way to do this with routing?
-        String uriPath = requestContext.getUriInfo().getPath();
-        if(requestContext.getMethod().equalsIgnoreCase("POST")) {
-            if(OPEN_PATHS.stream().anyMatch(item -> item.equalsIgnoreCase(uriPath)))
-                return;
+        if(isPost(requestContext) && OPEN_PATHS.contains(uriPath.toLowerCase()))
+            return;
 
-            if(token == null && OPTIONAL_TOKEN_PATHS.stream().anyMatch(item -> item.equalsIgnoreCase(uriPath)))
+        DecodedJWT jwt = parseAuthToken(token);
+
+        if(jwt == null) {
+            if (isPost(requestContext) && OPTIONAL_TOKEN_PATHS.contains(uriPath.toLowerCase()))
                 return;
+            else
+                throw new NotAuthorizedException("Not Authorized");
         }
 
+        enableRole(jwt);
+        SecurityContext context = createContext(requestContext.getUriInfo(), jwt);
+        requestContext.setSecurityContext(context);
+        ThreadContext.put("user", context.getUserPrincipal().getName());
+   }
 
-        try {
-            DecodedJWT jwt = verifyAuthToken(token);
-            enableRole(jwt);
-            SecurityContext context = createContext(requestContext.getUriInfo(), jwt);
-            requestContext.setSecurityContext(context);
-            ThreadContext.put("user", context.getUserPrincipal().getName());
-        } catch (JWTVerificationException e) {
-            LOG.warn("Invalid jwt token presented.", e);
-            throw new NotAuthorizedException("Not Authorized");
-        }
+    private boolean isPost(ContainerRequestContext requestContext) {
+        return requestContext.getMethod().equalsIgnoreCase("POST");
     }
 
     // ----- Private -----
@@ -103,11 +105,16 @@ public class AuthFilter implements ContainerRequestFilter {
         return headerBits[1];
     }
 
-    private DecodedJWT verifyAuthToken(String token) {
+    private DecodedJWT parseAuthToken(String token) {
         if(isEmpty(token))
-            throw new NotAuthorizedException("Not Authorized");
+            return null;
 
-        return VERIFIER.verify(token);
+        try {
+            return VERIFIER.verify(token);
+        } catch (JWTVerificationException e) {
+            LOG.warn("Invalid jwt token presented.", e);
+            return null;
+        }
     }
 
     private SecurityContext createContext(UriInfo uriInfo, DecodedJWT jwt) {
