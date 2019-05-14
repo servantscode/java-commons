@@ -1,5 +1,7 @@
 package org.servantscode.commons.search;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.ReflectionUtils;
 
 import java.time.LocalDate;
@@ -12,6 +14,8 @@ import java.util.Map;
 import static org.servantscode.commons.StringUtils.isSet;
 
 public class SearchParser<T> {
+    private static final Logger LOG = LogManager.getLogger(SearchParser.class);
+
     private final Class<T> clazz;
     private final String defaultField;
     private final Map<String, String> fieldMap;
@@ -31,6 +35,7 @@ public class SearchParser<T> {
     }
 
     public Search parse(String searchString) {
+        LOG.trace("Parsing search string: " + searchString);
         String[] clauseStrings = parseText(searchString);
 
         Search search = new Search();
@@ -91,7 +96,8 @@ public class SearchParser<T> {
     }
 
     private Search.SearchClause createClause(String string) {
-        String[] searchBits = string.split(":");
+        LOG.trace("Parsing clause: " + string);
+        String[] searchBits = string.split(":", 2);
         String fieldName = searchBits.length > 1? searchBits[0]: defaultField;
         String value = searchBits[searchBits.length-1];
 
@@ -111,16 +117,27 @@ public class SearchParser<T> {
                 return new Search.IntegerRangeClause(map(fieldName), Integer.parseInt(bits[0]), Integer.parseInt(bits[2]));
             }
             return new Search.IntegerClause(map(fieldName), Integer.parseInt(value));
-        } else if(fieldType == LocalDate.class || fieldType == ZonedDateTime.class) {
+        } else if(fieldType == LocalDate.class) {
             if(value.contains("[")) {
                 //Parsing [date1 TO date2]
                 String[] bits = value.substring(1, value.length()-1).split(" ");
                 return new Search.DateRangeClause(map(fieldName), LocalDate.parse(bits[0]), LocalDate.parse(bits[2]));
             }
             return new Search.DateClause(map(fieldName), LocalDate.parse(value));
+        } else if(fieldType == ZonedDateTime.class){
+            if(!value.contains("["))
+                throw new IllegalArgumentException("Could not process time range: " + value);
+
+            //Parsing [date1 TO date2]
+            String[] bits = value.substring(1, value.length()-1).split(" ");
+            return new Search.TimeRangeClause(map(fieldName), parseTime(bits[0]), parseTime(bits[2]));
         } else {
             throw new IllegalArgumentException(String.format("Can't figure out what to do with field %s (type: %s)", fieldName, fieldType.getSimpleName()));
         }
+    }
+
+    private ZonedDateTime parseTime(String bit) {
+        return bit.equals("*")? null: ZonedDateTime.parse(bit);
     }
 
     private String map(String fieldName) {

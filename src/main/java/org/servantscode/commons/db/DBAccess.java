@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.EnvProperty;
+import org.servantscode.commons.search.QueryBuilder;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -46,6 +47,14 @@ public class DBAccess {
         } catch (SQLException e) {
             throw new RuntimeException("Could not connect to database.", e);
         }
+    }
+
+    protected QueryBuilder select(String... selections) {
+        return new QueryBuilder().select(selections);
+    }
+
+    protected QueryBuilder count() {
+        return new QueryBuilder().select("count(1)");
     }
 
     protected static Timestamp convert(ZonedDateTime input) {
