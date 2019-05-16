@@ -7,10 +7,13 @@ import org.servantscode.commons.EnvProperty;
 import org.servantscode.commons.search.QueryBuilder;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 import static java.lang.String.format;
 
@@ -49,13 +52,11 @@ public class DBAccess {
         }
     }
 
-    protected QueryBuilder select(String... selections) {
-        return new QueryBuilder().select(selections);
-    }
+    protected QueryBuilder select(String... selections) { return new QueryBuilder().select(selections); }
+    protected QueryBuilder selectAll() { return new QueryBuilder().select("*"); }
+    protected QueryBuilder count() { return new QueryBuilder().select("count(1)"); }
 
-    protected QueryBuilder count() {
-        return new QueryBuilder().select("count(1)");
-    }
+    protected <T> T firstOrNull(List<T> items) { return items.isEmpty()? null: items.get(0); }
 
     protected static Timestamp convert(ZonedDateTime input) {
         //Translate zone to UTC then save
@@ -66,4 +67,13 @@ public class DBAccess {
         //Set zone to UTC
         return input != null? ZonedDateTime.ofInstant(input.toInstant(), ZoneId.of("Z")): null;
     };
+
+    protected Date convert(LocalDate date) {
+        return date != null? Date.valueOf(date): null;
+    }
+
+    protected LocalDate convert(Date date) {
+        return date != null? date.toLocalDate(): null;
+    }
+
 }
