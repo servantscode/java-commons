@@ -1,6 +1,5 @@
 package org.servantscode.commons.search;
 
-import jdk.vm.ci.meta.Local;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

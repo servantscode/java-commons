@@ -1,8 +1,12 @@
 package org.servantscode.commons.search;
 
+import org.servantscode.commons.db.DBAccess;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -149,16 +153,24 @@ public class QueryBuilder {
         state = nextState;
     }
 
-    public void fillStatement(PreparedStatement stmt, AtomicInteger pos) {
+    private void fillStatement(PreparedStatement stmt, AtomicInteger pos) {
         values.forEach(value -> {
             try {
                 if(value instanceof QueryBuilder)
-                    ((QueryBuilder)value).fillStatement(stmt, pos);
+                    ((QueryBuilder) value).fillStatement(stmt, pos);
                 else
-                    stmt.setObject(pos.getAndIncrement(), value);
+                    stmt.setObject(pos.getAndIncrement(), sqlize(value));
             } catch (SQLException e) {
-                throw new RuntimeException(String.format("Could not populate sql with value: %s at pos: %d\nsql: %s", value, pos.get(), getSql()), e);
+                throw new RuntimeException(String.format("Could not populate sql with value: %s at pos: %d\nsql: %s", value, pos.get() - 1, getSql()), e);
             }
         });
+    }
+
+    private Object sqlize(Object value) {
+        if(value instanceof LocalDate)
+            return DBAccess.convert((LocalDate)value);
+        if(value instanceof ZonedDateTime)
+            return DBAccess.convert((ZonedDateTime) value);
+        return value;
     }
 }

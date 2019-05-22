@@ -58,22 +58,21 @@ public class DBAccess {
 
     protected <T> T firstOrNull(List<T> items) { return items.isEmpty()? null: items.get(0); }
 
-    protected static Timestamp convert(ZonedDateTime input) {
+    public static Timestamp convert(ZonedDateTime input) {
         //Translate zone to UTC then save
         return input != null? Timestamp.valueOf(input.withZoneSameInstant(ZoneId.of("Z")).toLocalDateTime()): null;
     }
 
-    protected static ZonedDateTime convert(Timestamp input) {
+    public static ZonedDateTime convert(Timestamp input) {
         //Set zone to UTC
         return input != null? ZonedDateTime.ofInstant(input.toInstant(), ZoneId.of("Z")): null;
     };
 
-    protected Date convert(LocalDate date) {
+    public static Date convert(LocalDate date) {
         return date != null? Date.valueOf(date): null;
     }
 
-    protected LocalDate convert(Date date) {
+    public static LocalDate convert(Date date) {
         return date != null? date.toLocalDate(): null;
     }
-
 }
