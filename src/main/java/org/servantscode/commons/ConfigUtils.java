@@ -1,5 +1,7 @@
 package org.servantscode.commons;
 
+import org.servantscode.commons.db.ConfigDB;
+
 import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
@@ -18,6 +20,7 @@ public class ConfigUtils {
     private static final String SALT = "WlW@Mlzdk*uogY>quHz3"; //TODO: Consider randomizing and storing this as well.
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
+    private static ConfigDB CONFIG_DB = new ConfigDB();
 
     private static SecretKey secretKey;
 
@@ -63,6 +66,10 @@ public class ConfigUtils {
         } catch (GeneralSecurityException e) {
             throw new RuntimeException("Failed to decrypt config string.", e);
         }
+    }
+
+    public static String getConfiguration(String config) {
+        return CONFIG_DB.getConfiguration(config);
     }
 
     // ----- Private -----

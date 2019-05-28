@@ -1,5 +1,6 @@
 package org.servantscode.commons.rest;
 
+import org.servantscode.commons.db.ConfigDB;
 import org.servantscode.commons.security.PermissionManager;
 import org.servantscode.commons.security.SCPrincipal;
 
@@ -8,6 +9,13 @@ import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.core.SecurityContext;
 
 public class SCServiceBase {
+
+    private ConfigDB configDB;
+
+    public SCServiceBase() {
+        this.configDB = new ConfigDB();
+    }
+
     protected void verifyUserAccess(String permission) {
         if(!PermissionManager.hasEnabledPermissions())
             throw new NotAuthorizedException("Requested action required login");
@@ -28,5 +36,9 @@ public class SCServiceBase {
             return false;
 
         return PermissionManager.canUser(permission);
+    }
+
+    protected String getConfiguration(String config) {
+        return configDB.getConfiguration(config);
     }
 }
