@@ -50,6 +50,13 @@ public class QueryBuilder {
         return this;
     }
 
+    public QueryBuilder withId(int id) {
+        setState(BuilderState.WHERE);
+        this.wheres.add("id=?");
+        values.add(id);
+        return this;
+    }
+
     public QueryBuilder where(String clause, Object value) {
         setState(BuilderState.WHERE);
         this.wheres.add(clause);
