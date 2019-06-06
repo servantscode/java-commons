@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,6 +62,13 @@ public class QueryBuilder {
         setState(BuilderState.WHERE);
         this.wheres.add(clause);
         values.add(value);
+        return this;
+    }
+
+    public QueryBuilder where(String clause, Object... value) {
+        setState(BuilderState.WHERE);
+        this.wheres.add(clause);
+        values.addAll(Arrays.asList(value));
         return this;
     }
 
