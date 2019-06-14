@@ -10,6 +10,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,11 +29,11 @@ public class Search {
         this.clauses.add(clause);
     }
 
-    public String getDBQueryString() {
-        String clause = clauses.stream().map(SearchClause::getQuery).collect(Collectors.joining(" AND "));
-        LOG.trace("Parsed search is: " + clause);
-        return clause ;
-    }
+//    public String getDBQueryString() {
+//        String clause = clauses.stream().map(SearchClause::getQuery).collect(Collectors.joining(" AND "));
+//        LOG.trace("Parsed search is: " + clause);
+//        return clause ;
+//    }
 
     public List<SearchClause> getClauses() {
         return clauses;
@@ -217,4 +218,30 @@ public class Search {
             return input != null? Timestamp.valueOf(input.withZoneSameInstant(ZoneId.of("Z")).toLocalDateTime()): null;
         }
     }
+
+    public static class ListItemClause extends SearchClause {
+        private final String field;
+        private final String[] items;
+
+        public ListItemClause(String field, String... items) {
+            this.field = field;
+            this.items = items;
+        }
+
+        @Override
+        String getQuery() {
+            return Arrays.stream(items).map(item -> String.format("%s ILIKE ?", field)).collect(Collectors.joining(" OR "));
+        }
+
+        @Override
+        public String getSql() {
+            return Arrays.stream(items).map(item -> String.format("%s ILIKE ?", field)).collect(Collectors.joining(" OR "));
+        }
+
+        @Override
+        public List<Object> getValues() {
+            return Arrays.stream(items).map(item -> String.format("%%%s%%", item)).collect(Collectors.toList());
+        }
+    }
+
 }

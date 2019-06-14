@@ -112,6 +112,8 @@ public class SearchParser<T> {
             if(value.endsWith("\""))
                 value = value.substring(0, value.length()-1);
             return new Search.TextClause(map(fieldName), value);
+        } else if(List.class.isAssignableFrom(fieldType)) {
+            return new Search.ListItemClause(map(fieldName), value.split("\\|"));
         } else if(fieldType == boolean.class || fieldType == Boolean.class) {
             return new Search.BooleanClause(map(fieldName), Boolean.parseBoolean(value));
         } else if(fieldType == int.class || fieldType == Integer.class) {

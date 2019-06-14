@@ -13,9 +13,13 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
+import static org.servantscode.commons.StringUtils.isEmpty;
 
 public class DBAccess {
     private static Logger LOG = LogManager.getLogger(DBAccess.class);
@@ -68,11 +72,22 @@ public class DBAccess {
         return input != null? ZonedDateTime.ofInstant(input.toInstant(), ZoneId.of("Z")): null;
     };
 
-    public static Date convert(LocalDate date) {
-        return date != null? Date.valueOf(date): null;
+    public static Date convert(LocalDate date) { return date != null? Date.valueOf(date): null; }
+
+    public static LocalDate convert(Date date) { return date != null? date.toLocalDate(): null; }
+
+    public static List<String> parseList(String dataString) {
+        if(isEmpty(dataString))
+            return emptyList();
+
+        String[] values = dataString.split("\\|");
+        return Arrays.asList(values);
     }
 
-    public static LocalDate convert(Date date) {
-        return date != null? date.toLocalDate(): null;
+    public static String storeList(List<String> dates) {
+        if(dates == null || dates.isEmpty())
+            return "";
+
+        return String.join("|", dates);
     }
 }
