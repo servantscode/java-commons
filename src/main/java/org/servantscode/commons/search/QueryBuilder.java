@@ -94,10 +94,12 @@ public class QueryBuilder {
 
     public QueryBuilder search(Search search) {
         setState(BuilderState.WHERE);
-        search.getClauses().forEach(clause -> {
-                this.wheres.add(clause.getSql());
-                this.values.addAll(clause.getValues());
-            });
+        if(search != null) {
+            search.getClauses().forEach(clause -> {
+                    this.wheres.add(clause.getSql());
+                    this.values.addAll(clause.getValues());
+                });
+        }
         return this;
     }
 
@@ -109,15 +111,19 @@ public class QueryBuilder {
 
     public QueryBuilder limit(int limit) {
         setState(BuilderState.LIMIT);
-        this.limit = true;
-        values.add(limit);
+        if(limit > 0) {
+            this.limit = true;
+            values.add(limit);
+        }
         return this;
     }
 
     public QueryBuilder offset(int offset) {
         setState(BuilderState.OFFSET);
-        this.offset = true;
-        values.add(offset);
+        if(offset > 0) {
+            this.offset = true;
+            values.add(offset);
+        }
         return this;
     }
 

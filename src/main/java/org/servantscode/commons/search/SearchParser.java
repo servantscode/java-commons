@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static org.servantscode.commons.StringUtils.isEmpty;
 import static org.servantscode.commons.StringUtils.isSet;
 
 public class SearchParser<T> {
@@ -35,6 +36,9 @@ public class SearchParser<T> {
     }
 
     public Search parse(String searchString) {
+        if(isEmpty(searchString))
+            return null;
+
         LOG.trace("Parsing search string: " + searchString);
         String[] clauseStrings = parseText(searchString);
 
@@ -96,7 +100,7 @@ public class SearchParser<T> {
     }
 
     private Search.SearchClause createClause(String string) {
-        LOG.trace("Parsing clause: " + string);
+//        LOG.trace("Parsing clause: " + string);
         String[] searchBits = string.split(":", 2);
         String fieldName = searchBits.length > 1? searchBits[0]: defaultField;
         String value = searchBits[searchBits.length-1];
