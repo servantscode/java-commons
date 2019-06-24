@@ -134,9 +134,9 @@ public class SearchTest {
         LocalDate first;
         LocalDate second;
         first = LocalDate.of(2000, 1, 1);
-        while (first.isBefore(LocalDate.of(2040, 1, 1))) {
+        while (first.isBefore(LocalDate.of(2030, 1, 1))) {
             second = LocalDate.of(2000, 1, 1);
-            while (second.isBefore(LocalDate.of(2040, 1, 1))) {
+            while (second.isBefore(LocalDate.of(2030, 1, 1))) {
                 clause = new Search.DateRangeClause("field", first, second);
                 assertEquals("Wrong Query.", String.format("field > '%s' AND field < '%s'",
                         first.format(DateTimeFormatter.ofPattern("yyyy-MM-dd 00:00")),
@@ -222,9 +222,12 @@ public class SearchTest {
                             Timestamp.valueOf(one.withZoneSameInstant(ZoneId.of("Z")).toLocalDateTime()),
                             Timestamp.valueOf(two.withZoneSameInstant(ZoneId.of("Z")).toLocalDateTime())),
                             clause.getValues().toString());
-                    timeTwo = timeTwo.plusMinutes(27);
+                    timeTwo = timeTwo.plusMinutes(37);
                 }
                 timeOne = timeOne.plusMinutes(37);
+                if (iter.hasNext()) {
+                    idOne = ZoneId.of(iter.next());
+                }
             }
             dateOne = dateOne.plusDays(17);
             dateTwo = dateTwo.plusDays(23);
@@ -235,7 +238,6 @@ public class SearchTest {
     public void testListItemClauseSimple() {
         Search.ListItemClause clause;
         clause = new Search.ListItemClause("field", "Item");
-        System.out.printf("%s\n%s\n%s\n", clause.getQuery(), clause.getSql(), clause.getValues());
         assertEquals("Wrong Query.", "field ILIKE ?", clause.getQuery());
         assertEquals("Wrong SQL.", "field ILIKE ?", clause.getSql());
         assertEquals("Wrong Values", "[%Item%]", clause.getValues().toString());
@@ -244,36 +246,33 @@ public class SearchTest {
     @Test(expected = NullPointerException.class)
     public void testListItemClauseNullList() {
         Search.ListItemClause clause;
-        clause = new Search.ListItemClause("field");
-        assertEquals("Wrong Query.", "", clause.getQuery());
-        assertEquals("Wrong SQL.", "", clause.getSql());
-        assertEquals("Wrong Values", "[]", clause.getValues().toString());
+        clause = new Search.ListItemClause("field", null);
     }
 
     @Test
     public void testListItemClauseSpecial() {
         Search.ListItemClause clause;
-        clause = new Search.ListItemClause("field", "aba\\\\%s\\\\\\\\)\\\\;\\\\\"", "abcd123", "321fds!@#$%^&*();", "[]{}-\234=_+,.<>", "::\"\4132", null);
+        clause = new Search.ListItemClause("field", "aba\\\\%s\\\\\\\\)\\\\;\\\\\"", "abcd123", "321fds!@#$%^&*();", "[]{}-\234=_+,.<>", "::\"\4132", "");
         assertEquals("Wrong Query.", "field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ?", clause.getQuery());
         assertEquals("Wrong SQL.", "field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ?", clause.getSql());
-        assertEquals("Wrong Values", "[%aba\\\\%s\\\\\\\\)\\\\;\\\\\"%, %abcd123%, %321fds!@#$%^&*();%, %[]{}-\u009C=_+,.<>%, %::\"!32%, %null%]", clause.getValues().toString());
+        assertEquals("Wrong Values", "[%aba\\\\%s\\\\\\\\)\\\\;\\\\\"%, %abcd123%, %321fds!@#$%^&*();%, %[]{}-\u009C=_+,.<>%, %::\"!32%, %%]", clause.getValues().toString());
     }
 
     @Test(expected = NullPointerException.class)
     public void testListItemClauseListOfNull() {
         Search.ListItemClause clause;
         clause = new Search.ListItemClause(null, null, null, null, null, null, null);
-        assertEquals("Wrong Query.", "null ILIKE ? OR null ILIKE ? OR null ILIKE ? OR null ILIKE ? OR null ILIKE ? OR null ILIKE ?", clause.getQuery());
-        assertEquals("Wrong SQL.", "null ILIKE ? OR null ILIKE ? OR null ILIKE ? OR null ILIKE ? OR null ILIKE ? OR null ILIKE ?", clause.getSql());
-        assertEquals("Wrong Values", "[%null%, %null%, %null%, %null%, %null%, %null%]", clause.getValues().toString());
     }
 
     @Test(expected = NullPointerException.class)
     public void testListItemClauseSingleListOfNull() {
         Search.ListItemClause clause;
         clause = new Search.ListItemClause(null, new String[]{null});
-        assertEquals("Wrong Query.", "null ILIKE ?", clause.getQuery());
-        assertEquals("Wrong SQL.", "null ILIKE ?", clause.getSql());
-        assertEquals("Wrong Values", "[%null%]", clause.getValues().toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testListItemClauseEmptyList() {
+        Search.ListItemClause clause;
+        clause = new Search.ListItemClause("field");
     }
 }
