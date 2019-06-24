@@ -50,6 +50,9 @@ public class Search {
         private final String value;
 
         public TextClause(String field, String value) {
+            if (field == null || value == null) {
+                throw new NullPointerException("Can't pass null value to clause");
+            }
             this.field = field;
             this.value = value;
         }
@@ -69,6 +72,9 @@ public class Search {
         private final int value;
 
         public IntegerClause(String field, int value) {
+            if (field == null) {
+                throw new NullPointerException("Can't pass null value to clause");
+            }
             this.field = field;
             this.value = value;
         }
@@ -89,6 +95,9 @@ public class Search {
         private final int endValue;
 
         public IntegerRangeClause(String field, int startValue, int endValue) {
+            if (field == null) {
+                throw new NullPointerException("Can't pass null value to clause");
+            }
             this.field = field;
             this.startValue = startValue;
             this.endValue = endValue;
@@ -110,6 +119,9 @@ public class Search {
         private final boolean value;
 
         public BooleanClause(String field, boolean value) {
+            if (field == null) {
+                throw new NullPointerException("Can't pass null value to clause");
+            }
             this.field = field;
             this.value = value;
         }
@@ -131,6 +143,9 @@ public class Search {
         private final LocalDate value;
 
         public DateClause(String field, LocalDate value) {
+            if (field == null || value == null) {
+                throw new NullPointerException("Can't pass null value to clause");
+            }
             this.field = field;
             this.value = value;
         }
@@ -155,6 +170,9 @@ public class Search {
         private final LocalDate end;
 
         public DateRangeClause(String field, LocalDate start, LocalDate end) {
+            if (field == null || start == null || end == null) {
+                throw new NullPointerException("Can't pass null value to clause");
+            }
             this.field = field;
             this.start = start;
             this.end = end;
@@ -184,6 +202,9 @@ public class Search {
         private final ZonedDateTime end;
 
         public TimeRangeClause(String field, ZonedDateTime start, ZonedDateTime end) {
+            if (field == null || start == null || end == null) {
+                throw new NullPointerException("Can't pass null value to clause");
+            }
             this.field = field;
             this.start = start;
             this.end = end;
@@ -224,6 +245,17 @@ public class Search {
         private final String[] items;
 
         public ListItemClause(String field, String... items) {
+            if (field == null || items == null) {
+                throw new NullPointerException("Can't pass null value to clause");
+            }
+            if (items.length == 0) {
+                throw new IllegalArgumentException("List can't be of length 0");
+            }
+            for (String s : items) {
+                if (s == null) {
+                    throw new NullPointerException("Can't have null item in a list");
+                }
+            }
             this.field = field;
             this.items = items;
         }
