@@ -202,7 +202,7 @@ public class Search {
         private final ZonedDateTime end;
 
         public TimeRangeClause(String field, ZonedDateTime start, ZonedDateTime end) {
-            if (field == null || start == null || end == null) {
+            if (field == null) {
                 throw new NullPointerException("Can't pass null value to clause");
             }
             this.field = field;

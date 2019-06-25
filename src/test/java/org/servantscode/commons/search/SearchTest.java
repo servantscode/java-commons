@@ -172,22 +172,24 @@ public class SearchTest {
         clause = new Search.TimeRangeClause(null, null, null);
     }
 
-    @Test(expected = NullPointerException.class)
     public void testTimeRangeClauseStartNull() {
         LocalDate dateOne = LocalDate.of(0, 2, 1);
         LocalTime timeOne = LocalTime.of(0, 0, 0, 0);
         ZonedDateTime zd = ZonedDateTime.of(dateOne, timeOne, ZoneId.of("GMT"));
-        Search.TimeRangeClause clause;
-        clause = new Search.TimeRangeClause("field", null, zd);
+        Search.TimeRangeClause clause = new Search.TimeRangeClause("field", null, zd);
+        assertEquals("Wrong Query.", "field < '0001-02-01 00:00:00'", clause.getQuery());
+        assertEquals("Wrong SQL.", "field < ?", clause.getSql());
+        assertEquals("Wrong Values", "[0001-02-01 00:00:00.0]", clause.getValues().toString());
     }
 
-    @Test(expected = NullPointerException.class)
     public void testTimeRangeClauseEndNull() {
         LocalDate dateOne = LocalDate.of(0, 2, 1);
         LocalTime timeOne = LocalTime.of(0, 0, 0, 0);
         ZonedDateTime zd = ZonedDateTime.of(dateOne, timeOne, ZoneId.of("GMT"));
-        Search.TimeRangeClause clause;
-        clause = new Search.TimeRangeClause("field", zd, null);
+        Search.TimeRangeClause clause = new Search.TimeRangeClause("field", zd, null);
+        assertEquals("Wrong Query.", "field > '0001-02-01 00:00:00'", clause.getQuery());
+        assertEquals("Wrong SQL.", "field > ?", clause.getSql());
+        assertEquals("Wrong Values", "[0001-02-01 00:00:00.0]", clause.getValues().toString());
     }
 
     //Potentially has edge cases that are not tested for
