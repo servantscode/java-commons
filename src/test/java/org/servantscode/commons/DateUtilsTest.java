@@ -13,8 +13,12 @@ import static org.junit.Assert.assertNull;
 public class DateUtilsTest {
     @Test
     public void parseNormalTest() {
-        ZonedDateTime zd = ZonedDateTime.parse("2007-12-03T10:15:30+01:00[Europe/Paris]");
+        ZonedDateTime zd = ZonedDateTime.of(LocalDateTime.of(
+                LocalDate.of(2007, 12, 3),
+                LocalTime.of(10, 15, 30)),
+                ZoneId.of("Europe/Paris"));
         assertEquals("Incorrect parsing", zd, DateUtils.parse("2007-12-03T10:15:30+01:00[Europe/Paris]"));
+        assertEquals("Incorrect parsing", "2007-12-03T10:15:30+01:00[Europe/Paris]", DateUtils.parse("2007-12-03T10:15:30+01:00[Europe/Paris]").toString());
     }
 
     @Test
@@ -41,7 +45,7 @@ public class DateUtilsTest {
         while (iter.hasNext()) {
             String id = iter.next();
             for (int i = 0; i < 10 && iter.hasNext(); i++) {
-                zd = ZonedDateTime.of(LocalDateTime.of(LocalDate.of(numGen.nextInt(1000)+1990,numGen.nextInt(11)+1,1), LocalTime.of(numGen.nextInt(24),numGen.nextInt(60))), ZoneId.of(id));
+                zd = ZonedDateTime.of(LocalDateTime.of(LocalDate.of(numGen.nextInt(1000) + 1990, numGen.nextInt(11) + 1, 1), LocalTime.of(numGen.nextInt(24), numGen.nextInt(60))), ZoneId.of(id));
                 zd = zd.plusDays(numGen.nextInt(30));
                 assertEquals("Wrong parsed date", zd, DateUtils.parse(zd.toString()));
             }
@@ -60,7 +64,12 @@ public class DateUtilsTest {
 
     @Test
     public void toUTCTest() {
-        ZonedDateTime zd = ZonedDateTime.now();
-        assertEquals("Wrong date when converting to UTC", ZonedDateTime.ofInstant(zd.toInstant(), ZoneId.of("Z")), DateUtils.toUTC(zd));
+        ZonedDateTime zd = ZonedDateTime.parse("2019-06-26T13:37:09.904942900-05:00[America/Chicago]");
+        assertEquals("Wrong date when converting to UTC", zd.plusHours(5).toLocalDateTime(), DateUtils.toUTC(zd).toLocalDateTime());
+    }
+
+    @Test
+    public void toUTCTestNull() {
+        assertNull("Exception or wrong value when passed null", DateUtils.toUTC(null));
     }
 }
