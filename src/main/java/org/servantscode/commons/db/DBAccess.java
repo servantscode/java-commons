@@ -90,4 +90,6 @@ public class DBAccess {
 
         return String.join("|", dates);
     }
+
+    public String stringify(Enum<?> value) { return value == null? null: value.toString(); }
 }
