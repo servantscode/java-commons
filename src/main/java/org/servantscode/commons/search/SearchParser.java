@@ -107,11 +107,13 @@ public class SearchParser<T> {
 
         Class<?> fieldType = ReflectionUtils.getDeepFieldType(clazz, fieldName);
         if(fieldType == String.class) {
-            if(value.startsWith("\""))
+            if (value.startsWith("\""))
                 value = value.substring(1);
-            if(value.endsWith("\""))
-                value = value.substring(0, value.length()-1);
+            if (value.endsWith("\""))
+                value = value.substring(0, value.length() - 1);
             return new Search.TextClause(map(fieldName), value);
+        } else if(fieldType.isEnum()) {
+            return new Search.EnumClause(map(fieldName), value);
         } else if(List.class.isAssignableFrom(fieldType)) {
             return new Search.ListItemClause(map(fieldName), value.split("\\|"));
         } else if(fieldType == boolean.class || fieldType == Boolean.class) {

@@ -29,18 +29,11 @@ public class Search {
         this.clauses.add(clause);
     }
 
-//    public String getDBQueryString() {
-//        String clause = clauses.stream().map(SearchClause::getQuery).collect(Collectors.joining(" AND "));
-//        LOG.trace("Parsed search is: " + clause);
-//        return clause ;
-//    }
-
     public List<SearchClause> getClauses() {
         return clauses;
     }
 
     public static abstract class SearchClause {
-        abstract String getQuery();
         abstract String getSql();
         abstract List<Object> getValues();
     }
@@ -58,13 +51,29 @@ public class Search {
         }
 
         @Override
-        public String getQuery() { return String.format("%s ILIKE '%%%s%%'", field, value.replace("'", "''")); }
-
-        @Override
         public String getSql() { return String.format("%s ILIKE ?", field); }
 
         @Override
         public List<Object> getValues() { return asList(String.format("%%%s%%", value)); }
+    }
+
+    public static class EnumClause extends SearchClause {
+        private final String field;
+        private final String value;
+
+        public EnumClause(String field, String value) {
+            if (field == null || value == null) {
+                throw new NullPointerException("Can't pass null value to clause");
+            }
+            this.field = field;
+            this.value = value.toUpperCase();
+        }
+
+        @Override
+        public String getSql() { return String.format("%s=?", field); }
+
+        @Override
+        public List<Object> getValues() { return asList(value); }
     }
 
     public static class IntegerClause extends SearchClause {
@@ -78,9 +87,6 @@ public class Search {
             this.field = field;
             this.value = value;
         }
-
-        @Override
-        String getQuery() { return String.format("%s = %d", field, value); }
 
         @Override
         public String getSql() { return String.format("%s = ?", field); }
@@ -104,9 +110,6 @@ public class Search {
         }
 
         @Override
-        String getQuery() { return String.format("%s >= '%s' AND %s <= '%s'", field, startValue, field, endValue); }
-
-        @Override
         public String getSql() { return String.format("%s >= ? AND %s <= ?", field, field); }
 
         @Override
@@ -124,11 +127,6 @@ public class Search {
             }
             this.field = field;
             this.value = value;
-        }
-
-        @Override
-        String getQuery() {
-            return String.format("%s=%s", field, Boolean.toString(value));
         }
 
         @Override
@@ -151,13 +149,6 @@ public class Search {
         }
 
         @Override
-        String getQuery() {
-            return String.format("%s > '%s' AND %s < '%s'",
-                    field, value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd 00:00")),
-                    field, value.plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd 00:00")));
-        }
-
-        @Override
         public String getSql() { return String.format("%s > ? AND %s < ?", field, field); }
 
         @Override
@@ -176,13 +167,6 @@ public class Search {
             this.field = field;
             this.start = start;
             this.end = end;
-        }
-
-        @Override
-        String getQuery() {
-            return String.format("%s > '%s' AND %s < '%s'",
-                    field, start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd 00:00")),
-                    field, end.plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd 00:00")));
         }
 
         @Override
@@ -208,14 +192,6 @@ public class Search {
             this.field = field;
             this.start = start;
             this.end = end;
-        }
-
-        @Override
-        String getQuery() {
-            String query = (start != null)? String.format("%s > '%s'", field, start.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))): "";
-            query += (start != null && end != null)? " AND ": "";
-            query +=  (end != null)? String.format("%s < '%s'", field, end.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))): "";
-            return query;
         }
 
         @Override
@@ -258,11 +234,6 @@ public class Search {
             }
             this.field = field;
             this.items = items;
-        }
-
-        @Override
-        String getQuery() {
-            return Arrays.stream(items).map(item -> String.format("%s ILIKE ?", field)).collect(Collectors.joining(" OR "));
         }
 
         @Override

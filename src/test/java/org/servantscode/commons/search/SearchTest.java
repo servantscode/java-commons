@@ -19,7 +19,6 @@ public class SearchTest {
         Search search = new Search();
         search.addClause(new Search.TextClause("field", "value"));
         Search.SearchClause clause = search.getClauses().get(0);
-        assertEquals("Wrong Query.", "field ILIKE '%value%'", clause.getQuery());
         assertEquals("Wrong SQL.", "field ILIKE ?", clause.getSql());
         assertEquals("Wrong Values.", "[%value%]", clause.getValues().toString());
     }
@@ -34,9 +33,18 @@ public class SearchTest {
     public void testSearchTextClauseSpecial() {
         Search.SearchClause clause;
         clause = new Search.TextClause("Robert◙⌐⌐x╘'\");", "\\\\\\\\\"); \\\"");
-        assertEquals("Wrong Query", "Robert◙⌐⌐x╘'\"); ILIKE '%\\\\\\\\\"); \\\"%'", clause.getQuery());
         assertEquals("Wrong SQL.", "Robert◙⌐⌐x╘'\"); ILIKE ?", clause.getSql());
         assertEquals("Wrong Values", "[%\\\\\\\\\"); \\\"%]", clause.getValues().toString());
+    }
+
+    @Test
+    public void testSearchEnumClause() {
+        Search search = new Search();
+        search.addClause(new Search.EnumClause("field", "value"));
+        Search.SearchClause clause = search.getClauses().get(0);
+        assertEquals("Wrong SQL.", "field=?", clause.getSql());
+        assertEquals("Wrong Number of values.", 1, clause.getValues().size());
+        assertEquals("Wrong Values.", "VALUE", clause.getValues().get(0));
     }
 
     @Test
@@ -44,7 +52,6 @@ public class SearchTest {
         Search.SearchClause clause;
         for (int i = -1000; i < 1000; i++) {
             clause = new Search.IntegerClause("field", i);
-            assertEquals("Wrong Query.", "field = " + i, clause.getQuery());
             assertEquals("Wrong SQL.", "field = ?", clause.getSql());
             assertEquals("Wrong Values", "[" + i + "]", clause.getValues().toString());
         }
@@ -54,7 +61,6 @@ public class SearchTest {
     public void testSearchIntegerMin() {
         Search.SearchClause clause;
         clause = new Search.IntegerClause("field", Integer.MIN_VALUE);
-        assertEquals("Wrong Query.", "field = -2147483648", clause.getQuery());
         assertEquals("Wrong SQL.", "field = ?", clause.getSql());
         assertEquals("Wrong Values", "[-2147483648]", clause.getValues().toString());
     }
@@ -63,7 +69,6 @@ public class SearchTest {
     public void testSearchIntegerClauseMax() {
         Search.SearchClause clause;
         clause = new Search.IntegerClause("field", Integer.MAX_VALUE);
-        assertEquals("Wrong Query.", "field = 2147483647", clause.getQuery());
         assertEquals("Wrong SQL.", "field = ?", clause.getSql());
         assertEquals("Wrong Values", "[2147483647]", clause.getValues().toString());
     }
@@ -72,7 +77,6 @@ public class SearchTest {
     public void testIntegerRangeClauseExtreme() {
         Search.SearchClause clause;
         clause = new Search.IntegerRangeClause("field", Integer.MIN_VALUE, Integer.MAX_VALUE);
-        assertEquals("Wrong Query.", "field >= '-2147483648' AND field <= '2147483647'", clause.getQuery());
         assertEquals("Wrong SQL.", "field >= ? AND field <= ?", clause.getSql());
         assertEquals("Wrong Values", "[-2147483648, 2147483647]", clause.getValues().toString());
     }
@@ -83,7 +87,6 @@ public class SearchTest {
         for (int i = -100; i < 100; i++) {
             for (int j = -100; j < 100; j++) {
                 clause = new Search.IntegerRangeClause("field", i, j);
-                assertEquals("Wrong Query.", "field >= '" + i + "' AND field <= '" + j + "'", clause.getQuery());
                 assertEquals("Wrong SQL.", "field >= ? AND field <= ?", clause.getSql());
                 assertEquals("Wrong Values", "[" + i + ", " + j + "]", clause.getValues().toString());
             }
@@ -94,7 +97,6 @@ public class SearchTest {
     public void testBooleanClauseTrue() {
         Search.SearchClause clause;
         clause = new Search.BooleanClause("field", true);
-        assertEquals("Wrong Query.", "field=true", clause.getQuery());
         assertEquals("Wrong SQL.", "field = ?", clause.getSql());
         assertEquals("Wrong Values", "[true]", clause.getValues().toString());
     }
@@ -103,7 +105,6 @@ public class SearchTest {
     public void testBooleanClauseFalse() {
         Search.SearchClause clause;
         clause = new Search.BooleanClause("field", false);
-        assertEquals("Wrong Query.", "field=false", clause.getQuery());
         assertEquals("Wrong SQL.", "field = ?", clause.getSql());
         assertEquals("Wrong Values", "[false]", clause.getValues().toString());
     }
@@ -114,10 +115,6 @@ public class SearchTest {
         LocalDate local = LocalDate.of(-500, 1, 1);
         while (local.isBefore(LocalDate.of(2500, 12, 31))) {
             clause = new Search.DateClause("field", local);
-            assertEquals("Wrong Query.", String.format("field > '%s' AND field < '%s'",
-                    local.format(DateTimeFormatter.ofPattern("yyyy-MM-dd 00:00")),
-                    local.plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd 00:00"))),
-                    clause.getQuery());
             assertEquals("Wrong SQL.", "field > ? AND field < ?", clause.getSql());
             assertEquals("Wrong Values", String.format("[%s, %s]",
                     local,
@@ -138,10 +135,6 @@ public class SearchTest {
             second = LocalDate.of(2000, 1, 1);
             while (second.isBefore(LocalDate.of(2030, 1, 1))) {
                 clause = new Search.DateRangeClause("field", first, second);
-                assertEquals("Wrong Query.", String.format("field > '%s' AND field < '%s'",
-                        first.format(DateTimeFormatter.ofPattern("yyyy-MM-dd 00:00")),
-                        second.plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd 00:00"))),
-                        clause.getQuery());
                 assertEquals("Wrong SQL.", "field > ? AND field < ?", clause.getSql());
                 assertEquals("Wrong Values", String.format("[%s, %s]",
                         first,
@@ -161,7 +154,6 @@ public class SearchTest {
 
         Search.TimeRangeClause clause;
         clause = new Search.TimeRangeClause("field", zd, zd);
-        assertEquals("Wrong Query.", "field > '0001-02-01 00:00:00' AND field < '0001-02-01 00:00:00'", clause.getQuery());
         assertEquals("Wrong SQL.", "field > ? AND field < ?", clause.getSql());
         assertEquals("Wrong Values", "[0001-02-01 00:00:00.0, 0001-02-01 00:00:00.0]", clause.getValues().toString());
     }
@@ -177,7 +169,6 @@ public class SearchTest {
         LocalTime timeOne = LocalTime.of(0, 0, 0, 0);
         ZonedDateTime zd = ZonedDateTime.of(dateOne, timeOne, ZoneId.of("GMT"));
         Search.TimeRangeClause clause = new Search.TimeRangeClause("field", null, zd);
-        assertEquals("Wrong Query.", "field < '0001-02-01 00:00:00'", clause.getQuery());
         assertEquals("Wrong SQL.", "field < ?", clause.getSql());
         assertEquals("Wrong Values", "[0001-02-01 00:00:00.0]", clause.getValues().toString());
     }
@@ -187,7 +178,6 @@ public class SearchTest {
         LocalTime timeOne = LocalTime.of(0, 0, 0, 0);
         ZonedDateTime zd = ZonedDateTime.of(dateOne, timeOne, ZoneId.of("GMT"));
         Search.TimeRangeClause clause = new Search.TimeRangeClause("field", zd, null);
-        assertEquals("Wrong Query.", "field > '0001-02-01 00:00:00'", clause.getQuery());
         assertEquals("Wrong SQL.", "field > ?", clause.getSql());
         assertEquals("Wrong Values", "[0001-02-01 00:00:00.0]", clause.getValues().toString());
     }
@@ -215,10 +205,6 @@ public class SearchTest {
                     ZonedDateTime one = ZonedDateTime.of(LocalDateTime.of(dateOne, timeOne), idOne);
                     ZonedDateTime two = ZonedDateTime.of(LocalDateTime.of(dateTwo, timeTwo), idTwo);
                     clause = new Search.TimeRangeClause("field", one, two);
-                    assertEquals("Wrong Query.", String.format("field > '%s' AND field < '%s'",
-                            one.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
-                            two.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))),
-                            clause.getQuery());
                     assertEquals("Wrong SQL.", "field > ? AND field < ?", clause.getSql());
                     assertEquals("Wrong Values", String.format("[%s, %s]",
                             Timestamp.valueOf(one.withZoneSameInstant(ZoneId.of("Z")).toLocalDateTime()),
@@ -240,7 +226,6 @@ public class SearchTest {
     public void testListItemClauseSimple() {
         Search.ListItemClause clause;
         clause = new Search.ListItemClause("field", "Item");
-        assertEquals("Wrong Query.", "field ILIKE ?", clause.getQuery());
         assertEquals("Wrong SQL.", "field ILIKE ?", clause.getSql());
         assertEquals("Wrong Values", "[%Item%]", clause.getValues().toString());
     }
@@ -255,7 +240,6 @@ public class SearchTest {
     public void testListItemClauseSpecial() {
         Search.ListItemClause clause;
         clause = new Search.ListItemClause("field", "aba\\\\%s\\\\\\\\)\\\\;\\\\\"", "abcd123", "321fds!@#$%^&*();", "[]{}-\234=_+,.<>", "::\"\4132", "");
-        assertEquals("Wrong Query.", "field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ?", clause.getQuery());
         assertEquals("Wrong SQL.", "field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ?", clause.getSql());
         assertEquals("Wrong Values", "[%aba\\\\%s\\\\\\\\)\\\\;\\\\\"%, %abcd123%, %321fds!@#$%^&*();%, %[]{}-\u009C=_+,.<>%, %::\"!32%, %%]", clause.getValues().toString());
     }
