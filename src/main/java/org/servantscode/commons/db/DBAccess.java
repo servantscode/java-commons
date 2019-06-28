@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.EnvProperty;
 import org.servantscode.commons.search.QueryBuilder;
 
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.SQLException;
@@ -76,20 +77,37 @@ public class DBAccess {
 
     public static LocalDate convert(Date date) { return date != null? date.toLocalDate(): null; }
 
-    public static List<String> parseList(String dataString) {
-        if(isEmpty(dataString))
+    public static List<String> parseList(String valueString) {
+        if(isEmpty(valueString))
             return emptyList();
 
-        String[] values = dataString.split("\\|");
+        String[] values = valueString.split("\\|");
         return Arrays.asList(values);
     }
 
-    public static String storeList(List<String> dates) {
-        if(dates == null || dates.isEmpty())
+    public static String storeList(List<String> values) {
+        if(values == null || values.isEmpty())
             return "";
 
-        return String.join("|", dates);
+        return String.join("|", values);
     }
 
-    public String stringify(Enum<?> value) { return value == null? null: value.toString(); }
+    public static <T extends Enum<T>> List<T> parseEnumList(Class<T> clazz, String valueString) {
+        if(valueString == null || valueString.isEmpty())
+            return emptyList();
+
+        String[] values = valueString.split("\\|");
+        return Arrays.stream(values).map(v -> Enum.valueOf(clazz, v)).collect(Collectors.toList());
+    }
+
+    public static String storeEnumList(List<? extends Enum<?>> values) {
+        if(values == null || values.isEmpty())
+            return "";
+
+        return values.stream().map(Enum::toString).collect(Collectors.joining("|"));
+    }
+
+    public static String stringify(Enum<?> value) { return value == null? null: value.toString(); }
+    public static <T extends Enum<T>> T parse(Class<T> clazz, String value) { return value == null? null: Enum.valueOf(clazz, value); }
+
 }
