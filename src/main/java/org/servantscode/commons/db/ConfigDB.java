@@ -16,18 +16,14 @@ public class ConfigDB extends DBAccess {
     private static final Logger LOG = LogManager.getLogger(ConfigDB.class);
 
     public String getConfiguration(String config) {
-        QueryBuilder queryBuilder = new QueryBuilder();
-        queryBuilder.select("value");
-        queryBuilder.from("configuration");
-        queryBuilder.where("config=?");
+        QueryBuilder queryBuilder = select("value").from("configuration").where("config=?", config);
         try (Connection conn = getConnection();
-             PreparedStatement stmt = queryBuilder.prepareStatement(conn)) {
+             PreparedStatement stmt = queryBuilder.prepareStatement(conn);
+             ResultSet rs = stmt.executeQuery()) {
 
-            stmt.setString(1, config);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next())
-                    return rs.getString(1);
-            }
+            if (rs.next())
+                return rs.getString(1);
+
         } catch (SQLException e) {
             throw new RuntimeException("Could not retrieve configuration property: " + config, e);
         }
@@ -35,22 +31,19 @@ public class ConfigDB extends DBAccess {
     }
 
     public Map<String, String> getConfigurations(String configPrefix) {
-        QueryBuilder queryBuilder = new QueryBuilder();
-        queryBuilder.select("*");
-        queryBuilder.from("configuration");
-        queryBuilder.where("config LIKE ?");
+        QueryBuilder queryBuilder = select("*").from("configuration").where("config LIKE ?", configPrefix);
         try (Connection conn = getConnection();
-             PreparedStatement stmt = queryBuilder.prepareStatement(conn)) {
+             PreparedStatement stmt = queryBuilder.prepareStatement(conn);
+             ResultSet rs = stmt.executeQuery()) {
 
-            stmt.setString(1, configPrefix + "%");
-            try (ResultSet rs = stmt.executeQuery()) {
-                Map<String, String> results = new HashMap<>();
-                while (rs.next())
-                    results.put(rs.getString("config"), rs.getString("value"));
-                LOG.debug("Retrieved " + results.size() + " properties starting with " + configPrefix);
-                return results;
-            }
-        } catch (SQLException e) {
+            Map<String, String> results = new HashMap<>();
+            while (rs.next())
+                results.put(rs.getString("config"), rs.getString("value"));
+            LOG.debug("Retrieved " + results.size() + " properties starting with " + configPrefix);
+            return results;
+
+        } catch (
+                SQLException e) {
             throw new RuntimeException("Could not retrieve configuration properties: " + configPrefix, e);
         }
     }
