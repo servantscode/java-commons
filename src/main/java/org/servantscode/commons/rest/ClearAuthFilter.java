@@ -1,5 +1,6 @@
 package org.servantscode.commons.rest;
 
+import org.servantscode.commons.security.OrganizationContext;
 import org.servantscode.commons.security.PermissionManager;
 
 import javax.annotation.Priority;
@@ -15,5 +16,6 @@ public class ClearAuthFilter implements ContainerResponseFilter {
     public void filter(ContainerRequestContext requestContext,
                        ContainerResponseContext responseContext) {
         PermissionManager.clearEnabledPermissions();
+        OrganizationContext.clearEnabledOrganization();
     }
 }

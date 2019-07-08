@@ -30,6 +30,14 @@ public class SCPrincipal implements Principal {
         return claim.asInt();
     }
 
+    public int getOrgId() {
+        Claim claim = jwt.getClaim("orgId");
+        if(claim == null)
+            throw new NotAuthorizedException("Token does not have a orgId");
+
+        return claim.asInt();
+    }
+
     @Override
     public String toString() {
         return getName();

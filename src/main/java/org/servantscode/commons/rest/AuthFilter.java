@@ -9,7 +9,12 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
+import org.glassfish.jersey.inject.hk2.RequestContext;
 import org.servantscode.commons.EnvProperty;
+import org.servantscode.commons.Organization;
+import org.servantscode.commons.Session;
+import org.servantscode.commons.db.SessionDB;
+import org.servantscode.commons.security.OrganizationContext;
 import org.servantscode.commons.security.PermissionManager;
 import org.servantscode.commons.security.SCSecurityContext;
 
@@ -19,14 +24,21 @@ import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
+import java.net.URI;
+import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.servantscode.commons.StringUtils.isEmpty;
+import static org.servantscode.commons.StringUtils.isSet;
+import static org.servantscode.commons.security.SCSecurityContext.SYSTEM;
 
 @Provider
 @Priority(2000)
@@ -48,41 +60,82 @@ public class AuthFilter implements ContainerRequestFilter {
     @Context
     private HttpServletRequest request;
 
+    private SessionDB db;
+
+    public AuthFilter() {
+        this.db = new SessionDB();
+    }
+
     @Override
     public void filter(ContainerRequestContext requestContext) {
         //Allow OPTIONS calls for CORS
-        if(requestContext.getMethod().equalsIgnoreCase("OPTIONS"))
+        if (requestContext.getMethod().equalsIgnoreCase("OPTIONS"))
             return;
 
-        String uriPath = requestContext.getUriInfo().getPath();
+        UriInfo uri = requestContext.getUriInfo();
+
+
+        MultivaluedMap<String, String> headers = requestContext.getHeaders();
+        for(Map.Entry<String, List<String>> entry: headers.entrySet())
+            System.out.println(String.format("%s => %s", entry.getKey(), String.join(", ", entry.getValue())));
+
+        String host = requestContext.getHeaderString("referer");
+        host = isSet(host)? URI.create(host).getHost(): requestContext.getHeaderString("x-forwarded-host");
+        host = isSet(host)? host: uri.getRequestUri().getHost();
+
+        String org = host.split("\\.")[0];
+//        String org = uri.getRequestUri().getHost().split("\\.")[0];
+        OrganizationContext.enableOrganization(org);
+        ThreadContext.put("request.org", org);
+
+        String uriPath = uri.getPath();
         ThreadContext.put("request.received", Long.toString(System.currentTimeMillis()));
         ThreadContext.put("request.method", requestContext.getMethod());
         ThreadContext.put("request.path", uriPath);
-        ThreadContext.put("request.orgin", request.getRemoteAddr());
 
-        if(isEmpty(ThreadContext.get("transaction.id")))
+        String callingIp = request.getRemoteAddr();
+        ThreadContext.put("request.origin", callingIp);
+
+        if (isEmpty(ThreadContext.get("transaction.id")))
             ThreadContext.put("transaction.id", UUID.randomUUID().toString());
 
         String token = parseOptionalAuthHeader(requestContext);
 
         // No token required for login and password resets...
         // TODO: Is there a better way to do this with routing?
-        if(isPost(requestContext) && OPEN_PATHS.contains(uriPath.toLowerCase()))
+        if (isPost(requestContext) && OPEN_PATHS.contains(uriPath.toLowerCase()))
             return;
 
         DecodedJWT jwt = parseAuthToken(token);
 
-        if(jwt == null) {
+        if (jwt == null) {
             if (isPost(requestContext) && OPTIONAL_TOKEN_PATHS.contains(uriPath.toLowerCase()))
                 return;
             else
                 throw new NotAuthorizedException("Not Authorized");
         }
 
+        String user = getUserName(jwt);
+        ThreadContext.put("user", user);
+
+        Organization activeOrg = OrganizationContext.getOrganization();
+        if(activeOrg == null || !activeOrg.getName().equals(getOrg(jwt)))
+            throw new NotAuthorizedException("Not Authorized");
+
+        if(!user.equals(SYSTEM)) {
+            Session activeSession = db.getSessionByToken(token);
+            if (activeSession == null || activeSession.getExpiration().isBefore(ZonedDateTime.now())) {
+                throw new NotAuthorizedException("Not Authorized");
+            } else if (!activeSession.getIp().equals(callingIp)) {
+                LOG.info("Encountered change in calling ip. %s => %s", activeSession.getIp(), callingIp);
+                activeSession.setIp(callingIp);
+                db.updateCallingIp(activeSession);
+            }
+        }
+
         enableRole(jwt);
         SecurityContext context = createContext(requestContext.getUriInfo(), jwt);
         requestContext.setSecurityContext(context);
-        ThreadContext.put("user", context.getUserPrincipal().getName());
    }
 
     private boolean isPost(ContainerRequestContext requestContext) {
@@ -127,5 +180,25 @@ public class AuthFilter implements ContainerRequestFilter {
             String[] userPerms = claim.asArray(String.class);
             PermissionManager.enablePermissions(userPerms);
         }
+    }
+
+    private int getUserId(DecodedJWT jwt) {
+        Claim claim = jwt.getClaim("userId");
+        if(claim == null)
+            throw new NotAuthorizedException("Token does not have a userId");
+
+        return claim.asInt();
+    }
+
+    private String getUserName(DecodedJWT jwt) {
+        return jwt.getSubject();
+    }
+
+    private String getOrg(DecodedJWT jwt) {
+        Claim claim = jwt.getClaim("org");
+        if(claim == null)
+            throw new NotAuthorizedException("Token does not have an organization");
+
+        return claim.asString();
     }
 }

@@ -9,6 +9,8 @@ import java.security.Principal;
 
 public class SCSecurityContext implements SecurityContext {
 
+    public static final String SYSTEM = "system";
+
     private final UriInfo uriInfo;
     private final DecodedJWT jwt;
 
