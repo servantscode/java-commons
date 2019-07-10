@@ -1,6 +1,9 @@
 package org.servantscode.commons.search;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.db.DBAccess;
+import org.servantscode.commons.security.OrganizationContext;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,18 +14,20 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.servantscode.commons.StringUtils.isSet;
 
 public class QueryBuilder {
-    private enum BuilderState {START, SELECT, FROM, JOIN, WHERE, SORT, LIMIT, OFFSET, DONE };
+    private static Logger LOG = LogManager.getLogger(QueryBuilder.class);
+
+    private enum BuilderState {START, SELECT, FROM, JOIN, WHERE, GROUP, SORT, LIMIT, OFFSET, DONE };
 
     private List<String> selections = new LinkedList<>();
     private List<String> tables = new LinkedList<>();
     private List<String> joins = new LinkedList<>();
     private List<String> wheres = new LinkedList<>();
+    private List<String> groupBy = new LinkedList<>();
     private String sort;
     private boolean limit;
     private boolean offset;
@@ -92,6 +97,21 @@ public class QueryBuilder {
         return this;
     }
 
+    public QueryBuilder inOrg() {
+        return inOrg("org_id", OrganizationContext.orgId());
+    }
+
+    public QueryBuilder inOrg(String field) {
+        return inOrg(field, OrganizationContext.orgId());
+    }
+
+    public QueryBuilder inOrg(String field, int orgId) {
+        setState(BuilderState.WHERE);
+        this.wheres.add(String.format("(%s=? OR %s IS NULL)", field, field));
+        values.add(orgId);
+        return this;
+    }
+
     public QueryBuilder search(Search search) {
         setState(BuilderState.WHERE);
         if(search != null) {
@@ -100,6 +120,12 @@ public class QueryBuilder {
                     this.values.addAll(clause.getValues());
                 });
         }
+        return this;
+    }
+
+    public QueryBuilder groupBy(String... fields) {
+        setState(BuilderState.GROUP);
+        groupBy.addAll(Arrays.asList(fields));
         return this;
     }
 
@@ -133,6 +159,9 @@ public class QueryBuilder {
 
         //Error here will not leak as higher level owns the connection and prepareStatement shouldn't leak on error.
         //We are relying on the underlying prepareStatement() but this seems reasonable.
+        String sql = getSql();
+        LOG.debug("generated sql: " + sql);
+
         PreparedStatement stmt = conn.prepareStatement(getSql());
         try {
             //Error here would leak connection, so catch, close and re-throw.
@@ -147,12 +176,14 @@ public class QueryBuilder {
     public String getSql() {
         setState(BuilderState.DONE);
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT ").append(selections.stream().collect(Collectors.joining(", ")));
-        sql.append(" FROM ").append(tables.stream().collect(Collectors.joining(", ")));
+        sql.append("SELECT ").append(String.join(", ", selections));
+        sql.append(" FROM ").append(String.join(", ", tables));
         if(!joins.isEmpty())
-            sql.append(" ").append(joins.stream().collect(Collectors.joining(" ")));
+            sql.append(" ").append(String.join(" ", joins));
         if(!wheres.isEmpty())
-            sql.append(" WHERE ").append(wheres.stream().collect(Collectors.joining(" AND ")));
+            sql.append(" WHERE ").append(String.join(" AND ", wheres));
+        if(!groupBy.isEmpty())
+            sql.append(" GROUP BY ").append(String.join(", ", groupBy));
         if(isSet(sort))
             sql.append(" ORDER BY " + sort);
         if(limit)
