@@ -79,12 +79,14 @@ public class AuthFilter implements ContainerRequestFilter {
         for(Map.Entry<String, List<String>> entry: headers.entrySet())
             System.out.println(String.format("%s => %s", entry.getKey(), String.join(", ", entry.getValue())));
 
-        String host = requestContext.getHeaderString("referer");
-        host = isSet(host)? URI.create(host).getHost(): requestContext.getHeaderString("x-forwarded-host");
-        host = isSet(host)? host: uri.getRequestUri().getHost();
+        String org = requestContext.getHeaderString("x-sc-org");
+        if(isEmpty(org)) {
+            String host = requestContext.getHeaderString("referer");
+            host = isSet(host) ? URI.create(host).getHost() : requestContext.getHeaderString("x-forwarded-host");
+            host = isSet(host) ? host : uri.getRequestUri().getHost();
+            org = host.split("\\.")[0];
+        }
 
-        String org = host.split("\\.")[0];
-//        String org = uri.getRequestUri().getHost().split("\\.")[0];
         OrganizationContext.enableOrganization(org);
         ThreadContext.put("request.org", org);
 

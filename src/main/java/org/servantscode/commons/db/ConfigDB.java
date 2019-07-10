@@ -29,7 +29,7 @@ public class ConfigDB extends DBAccess {
     }
 
     public Map<String, String> getConfigurations(String configPrefix) {
-        QueryBuilder query = select("value").from("configuration").where("config LIKE ?", configPrefix + "%").inOrg();
+        QueryBuilder query = selectAll().from("configuration").where("config LIKE ?", configPrefix + "%").inOrg();
         try(Connection conn = getConnection();
             PreparedStatement stmt = query.prepareStatement(conn);
             ResultSet rs = stmt.executeQuery()) {
