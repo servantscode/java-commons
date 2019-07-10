@@ -15,8 +15,8 @@ import java.util.List;
 public class SessionDB extends DBAccess {
     private static Logger LOG = LogManager.getLogger(SessionDB.class);
 
-    public List<Session> getSessions(int personId, int orgId) {
-        QueryBuilder query = selectAll().from("sessions").where("person_id=?", personId).where("org_id=?", orgId);
+    public List<Session> getSessions(int personId) {
+        QueryBuilder query = selectAll().from("sessions").where("person_id=?", personId).inOrg();
         try (Connection conn = getConnection();
              PreparedStatement stmt = query.prepareStatement(conn);
              ResultSet rs = stmt.executeQuery()) {

@@ -2,6 +2,7 @@ package org.servantscode.commons.search;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.servantscode.commons.Organization;
 import org.servantscode.commons.db.DBAccess;
 import org.servantscode.commons.security.OrganizationContext;
 
@@ -101,11 +102,30 @@ public class QueryBuilder {
         return inOrg("org_id", OrganizationContext.orgId());
     }
 
+    public QueryBuilder inOrg(boolean includeSystem) {
+        return includeSystem?
+                inOrgOrSystem("org_id", OrganizationContext.orgId()):
+                inOrg("org_id", OrganizationContext.orgId());
+    }
+
     public QueryBuilder inOrg(String field) {
         return inOrg(field, OrganizationContext.orgId());
     }
 
+    public QueryBuilder inOrg(String field, boolean includeSystem) {
+        return includeSystem?
+                inOrgOrSystem(field, OrganizationContext.orgId()):
+                inOrg(field, OrganizationContext.orgId());
+    }
+
     public QueryBuilder inOrg(String field, int orgId) {
+        setState(BuilderState.WHERE);
+        this.wheres.add(String.format("%s=?", field));
+        values.add(orgId);
+        return this;
+    }
+
+    public QueryBuilder inOrgOrSystem(String field, int orgId) {
         setState(BuilderState.WHERE);
         this.wheres.add(String.format("(%s=? OR %s IS NULL)", field, field));
         values.add(orgId);
