@@ -25,43 +25,25 @@ import static org.servantscode.commons.StringUtils.isEmpty;
 public class DBAccess {
     private static Logger LOG = LogManager.getLogger(DBAccess.class);
 
-    private static HikariDataSource source;
-
-    private static final String DB_HOST = EnvProperty.get("DB_HOST", "postgres");
-    private static final String DB_PORT = EnvProperty.get("DB_PORT","5432");
-    private static final String DB_NAME = EnvProperty.get("DB_NAME","servantscode");
-    private static final String DB_USER = EnvProperty.get("DB_USER","servant1");
-    private static final String DB_PASSWORD = EnvProperty.get("DB_PASSWORD");
-
+    private static ConnectionFactory factory;
     static {
-        try {
-            //Ensure driver is loaded into local context.
-            Class.forName("org.postgresql.Driver");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Database driver not present.", e);
-        }
-
-        source = new HikariDataSource();
-        String jdbcUrl = format("jdbc:postgresql://%s:%s/%s", DB_HOST, DB_PORT, DB_NAME);
-        LOG.debug("Connecting to: " + jdbcUrl);
-        source.setJdbcUrl(jdbcUrl);
-        source.setUsername(DB_USER);
-        source.setPassword(DB_PASSWORD);
+        factory = new ConnectionFactory();
     }
 
-    protected static Connection getConnection() {
-        try {
-            return source.getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException("Could not connect to database.", e);
-        }
+    // Mocking access for Testing.
+    public static void setConnectionFactory(ConnectionFactory f) {
+        factory = f;
     }
 
-    protected QueryBuilder select(String... selections) { return new QueryBuilder().select(selections); }
-    protected QueryBuilder selectAll() { return new QueryBuilder().select("*"); }
-    protected QueryBuilder count() { return new QueryBuilder().select("count(1)"); }
+    protected Connection getConnection() {
+        return factory.getConnection();
+    }
 
-    protected <T> T firstOrNull(List<T> items) { return items.isEmpty()? null: items.get(0); }
+    protected static QueryBuilder select(String... selections) { return new QueryBuilder().select(selections); }
+    protected static QueryBuilder selectAll() { return new QueryBuilder().select("*"); }
+    protected static QueryBuilder count() { return new QueryBuilder().select("count(1)"); }
+
+    protected static <T> T firstOrNull(List<T> items) { return items.isEmpty()? null: items.get(0); }
 
     public static Timestamp convert(ZonedDateTime input) {
         //Translate zone to UTC then save
@@ -109,5 +91,4 @@ public class DBAccess {
 
     public static String stringify(Enum<?> value) { return value == null? null: value.toString(); }
     public static <T extends Enum<T>> T parse(Class<T> clazz, String value) { return value == null? null: Enum.valueOf(clazz, value); }
-
 }
