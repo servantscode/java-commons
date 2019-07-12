@@ -48,8 +48,14 @@ public class AuthFilter implements ContainerRequestFilter {
     private static final String SIGNING_KEY = EnvProperty.get("JWT_KEY");
 
     //Make sure these lists are lower cased for case-insensitive comparisons
-    private static final List<String> OPTIONAL_TOKEN_PATHS = asList("password");
-    private static final List<String> OPEN_PATHS = asList("login", "password/reset");
+    private static final List<RequestType> OPTIONAL_TOKEN_PATHS =
+            asList(new RequestType("password"),
+                    new RequestType("GET", "photo/public/", true));
+
+    private static final List<RequestType> OPEN_PATHS =
+            asList(new RequestType("login"),
+                    new RequestType("password/reset"),
+                    new RequestType("GET", "organization/active"));
 
     private static final Algorithm algorithm = Algorithm.HMAC256(SIGNING_KEY);
     private static final JWTVerifier VERIFIER = JWT.require(algorithm)
@@ -74,11 +80,6 @@ public class AuthFilter implements ContainerRequestFilter {
 
         UriInfo uri = requestContext.getUriInfo();
 
-
-        MultivaluedMap<String, String> headers = requestContext.getHeaders();
-        for(Map.Entry<String, List<String>> entry: headers.entrySet())
-            System.out.println(String.format("%s => %s", entry.getKey(), String.join(", ", entry.getValue())));
-
         String org = requestContext.getHeaderString("x-sc-org");
         if(isEmpty(org)) {
             String host = requestContext.getHeaderString("referer");
@@ -98,20 +99,25 @@ public class AuthFilter implements ContainerRequestFilter {
         String callingIp = request.getRemoteAddr();
         ThreadContext.put("request.origin", callingIp);
 
+        ThreadContext.put("transaction.id", requestContext.getHeaderString("x-sc-transaction-id"));
         if (isEmpty(ThreadContext.get("transaction.id")))
             ThreadContext.put("transaction.id", UUID.randomUUID().toString());
 
         String token = parseOptionalAuthHeader(requestContext);
 
+
+        RequestType request = new RequestType(requestContext.getMethod().toUpperCase(), uriPath.toLowerCase());
+        LOG.trace("Authorizing request: " + request);
+
         // No token required for login and password resets...
         // TODO: Is there a better way to do this with routing?
-        if (isPost(requestContext) && OPEN_PATHS.contains(uriPath.toLowerCase()))
+        if (OPEN_PATHS.contains(request))
             return;
 
         DecodedJWT jwt = parseAuthToken(token);
 
         if (jwt == null) {
-            if (isPost(requestContext) && OPTIONAL_TOKEN_PATHS.contains(uriPath.toLowerCase()))
+            if (OPTIONAL_TOKEN_PATHS.contains(request))
                 return;
             else
                 throw new NotAuthorizedException("Not Authorized");
@@ -138,10 +144,6 @@ public class AuthFilter implements ContainerRequestFilter {
         enableRole(jwt);
         SecurityContext context = createContext(requestContext.getUriInfo(), jwt);
         requestContext.setSecurityContext(context);
-   }
-
-    private boolean isPost(ContainerRequestContext requestContext) {
-        return requestContext.getMethod().equalsIgnoreCase("POST");
     }
 
     // ----- Private -----
@@ -203,4 +205,41 @@ public class AuthFilter implements ContainerRequestFilter {
 
         return claim.asString();
     }
+
+    private static class RequestType {
+        private final String method;
+        private final String path;
+        private final boolean partial;
+
+        public RequestType(String method, String path, boolean partial) {
+            this.method = method;
+            this.path = path;
+            this.partial = partial;
+        }
+
+        public RequestType(String method, String path) {
+            this(method, path, false);
+        }
+
+        public RequestType(String path) {
+            this("POST", path, false);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if(!(obj instanceof RequestType))
+                return false;
+            RequestType other = (RequestType)obj;
+            return this.method.equals(other.method) &&
+                        ((this.partial && other.path.startsWith(this.path)) ||
+                         (other.partial && this.path.startsWith(other.path)) ||
+                         this.path.equals(other.path));
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Request {%s %s}", method, path);
+        }
+    }
+
 }

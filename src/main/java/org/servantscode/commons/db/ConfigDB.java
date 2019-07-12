@@ -37,7 +37,7 @@ public class ConfigDB extends DBAccess {
             Map<String, String> results = new HashMap<>();
             while(rs.next())
                 results.put(rs.getString("config"), rs.getString("value"));
-            LOG.debug("Retrieved " + results.size() + " properties starting with " + configPrefix);
+            LOG.trace("Retrieved " + results.size() + " properties starting with " + configPrefix);
             return results;
         } catch (SQLException e) {
             throw new RuntimeException("Could not retrieve configuration properties: " + configPrefix, e);

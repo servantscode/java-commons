@@ -5,7 +5,9 @@ import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.Organization;
 import org.servantscode.commons.search.QueryBuilder;
 import org.servantscode.commons.search.SearchParser;
+import org.servantscode.commons.security.OrganizationContext;
 
+import javax.ws.rs.NotFoundException;
 import java.sql.*;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -126,6 +128,21 @@ public class OrganizationDB extends DBAccess {
         }
     }
 
+    public void attchPhoto(int id, String guid) {
+        try ( Connection conn = getConnection();
+              PreparedStatement stmt = conn.prepareStatement("UPDATE organizations SET photo_guid=? WHERE id=?");
+        ){
+            stmt.setString(1, guid);
+            stmt.setInt(2, id);
+
+            if(stmt.executeUpdate() == 0)
+                throw new NotFoundException("Could not attach photo to organization: " + id);
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Could not attach photo to organization: " + id, e);
+        }
+    }
+
     // ----- Private -----
     private List<Organization> processResults(ResultSet rs) throws SQLException {
         List<Organization> results = new LinkedList<>();
@@ -134,6 +151,7 @@ public class OrganizationDB extends DBAccess {
             org.setId(rs.getInt("id"));
             org.setName(rs.getString("name"));
             org.setHostName(rs.getString("host_name"));
+            org.setPhotoGuid(rs.getString("photo_guid"));
             results.add(org);
         }
         return results;

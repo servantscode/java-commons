@@ -180,7 +180,7 @@ public class QueryBuilder {
         //Error here will not leak as higher level owns the connection and prepareStatement shouldn't leak on error.
         //We are relying on the underlying prepareStatement() but this seems reasonable.
         String sql = getSql();
-        LOG.debug("generated sql: " + sql);
+        LOG.trace("generated sql: " + sql);
 
         PreparedStatement stmt = conn.prepareStatement(getSql());
         try {
