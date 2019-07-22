@@ -129,9 +129,9 @@ public class SearchParser<T> {
             if(value.contains("[")) {
                 //Parsing [date1 TO date2]
                 String[] bits = value.substring(1, value.length()-1).split(" ");
-                return new Search.DateRangeClause(map(fieldName), LocalDate.parse(bits[0]), LocalDate.parse(bits[2]));
+                return new Search.DateRangeClause(map(fieldName), parseDate(bits[0]), parseDate(bits[2]));
             }
-            return new Search.DateClause(map(fieldName), LocalDate.parse(value));
+            return new Search.DateClause(map(fieldName), parseDate(value));
         } else if(fieldType == ZonedDateTime.class){
             if(!value.contains("["))
                 throw new IllegalArgumentException("Could not process time range: " + value);
@@ -144,9 +144,9 @@ public class SearchParser<T> {
         }
     }
 
-    private ZonedDateTime parseTime(String bit) {
-        return bit.equals("*")? null: ZonedDateTime.parse(bit);
-    }
+    private LocalDate parseDate(String bit) { return bit.equals("*")? null: LocalDate.parse(bit); }
+
+    private ZonedDateTime parseTime(String bit) { return bit.equals("*")? null: ZonedDateTime.parse(bit); }
 
     private String map(String fieldName) {
         if(fieldMap == null)

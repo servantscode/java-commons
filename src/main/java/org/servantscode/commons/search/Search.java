@@ -161,7 +161,7 @@ public class Search {
         private final LocalDate end;
 
         public DateRangeClause(String field, LocalDate start, LocalDate end) {
-            if (field == null || start == null || end == null) {
+            if (field == null) {
                 throw new NullPointerException("Can't pass null value to clause");
             }
             this.field = field;
@@ -170,10 +170,20 @@ public class Search {
         }
 
         @Override
-        public String getSql() { return String.format("%s > ? AND %s < ?", field, field); }
+        public String getSql() {
+            String query = (start != null)? String.format("%s > ?", field): "";
+            query += (start != null && end != null)? " AND ": "";
+            query +=  (end != null)? String.format("%s < ?", field): "";
+            return query;
+        }
 
         @Override
-        public List<Object> getValues() { return asList(start, end); }
+        public List<Object> getValues() {
+            List<Object> values = new ArrayList<>(2);
+            if(start != null) values.add(convert(start));
+            if(end != null) values.add(convert(end));
+            return values;
+        }
 
         protected Date convert(LocalDate date) {
             return date == null? null: Date.valueOf(date);
