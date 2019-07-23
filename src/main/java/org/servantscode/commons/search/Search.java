@@ -76,11 +76,11 @@ public class Search {
         public List<Object> getValues() { return asList(value); }
     }
 
-    public static class IntegerClause extends SearchClause {
+    public static class NumberClause extends SearchClause {
         private final String field;
-        private final int value;
+        private final Number value;
 
-        public IntegerClause(String field, int value) {
+        public NumberClause(String field, Number value) {
             if (field == null) {
                 throw new NullPointerException("Can't pass null value to clause");
             }
@@ -95,12 +95,12 @@ public class Search {
         public List<Object> getValues() { return asList(value); }
     }
 
-    public static class IntegerRangeClause extends SearchClause {
+    public static class NumberRangeClause extends SearchClause {
         private final String field;
-        private final int startValue;
-        private final int endValue;
+        private final Number startValue;
+        private final Number endValue;
 
-        public IntegerRangeClause(String field, int startValue, int endValue) {
+        public NumberRangeClause(String field, Number startValue, Number endValue) {
             if (field == null) {
                 throw new NullPointerException("Can't pass null value to clause");
             }
@@ -110,10 +110,20 @@ public class Search {
         }
 
         @Override
-        public String getSql() { return String.format("%s >= ? AND %s <= ?", field, field); }
+        public String getSql() {
+            String query = (startValue != null)? String.format("%s >= ?", field): "";
+            query += (startValue != null && endValue != null)? " AND ": "";
+            query +=  (endValue != null)? String.format("%s <= ?", field): "";
+            return query;
+        }
 
         @Override
-        public List<Object> getValues() { return asList(startValue, endValue); }
+        public List<Object> getValues() {
+            List<Object> values = new ArrayList<>(2);
+            if(startValue != null) values.add(startValue);
+            if(endValue != null) values.add(endValue);
+            return values;
+        }
     }
 
 
@@ -228,13 +238,13 @@ public class Search {
 
     public static class ListItemClause extends SearchClause {
         private final String field;
-        private final String[] items;
+        private final List<String> items;
 
-        public ListItemClause(String field, String... items) {
+        public ListItemClause(String field, List<String> items) {
             if (field == null || items == null) {
                 throw new NullPointerException("Can't pass null value to clause");
             }
-            if (items.length == 0) {
+            if (items.size() == 0) {
                 throw new IllegalArgumentException("List can't be of length 0");
             }
             for (String s : items) {
@@ -248,12 +258,12 @@ public class Search {
 
         @Override
         public String getSql() {
-            return Arrays.stream(items).map(item -> String.format("%s ILIKE ?", field)).collect(Collectors.joining(" OR "));
+            return items.stream().map(item -> String.format("%s ILIKE ?", field)).collect(Collectors.joining(" OR "));
         }
 
         @Override
         public List<Object> getValues() {
-            return Arrays.stream(items).map(item -> String.format("%%%s%%", item)).collect(Collectors.toList());
+            return items.stream().map(item -> String.format("%%%s%%", item)).collect(Collectors.toList());
         }
     }
 

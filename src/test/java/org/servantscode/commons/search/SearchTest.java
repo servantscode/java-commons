@@ -4,7 +4,8 @@ import org.junit.Test;
 
 import java.sql.Timestamp;
 import java.time.*;
-import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 
 import static junit.framework.TestCase.assertEquals;
@@ -50,17 +51,25 @@ public class SearchTest {
     @Test
     public void testSearchIntegerClauseLooped() {
         Search.SearchClause clause;
-        for (int i = -1000; i < 1000; i++) {
-            clause = new Search.IntegerClause("field", i);
+        for (int i = -1000; i < 1001; i+=1000) {
+            clause = new Search.NumberClause("field", i);
             assertEquals("Wrong SQL.", "field = ?", clause.getSql());
             assertEquals("Wrong Values", "[" + i + "]", clause.getValues().toString());
         }
     }
 
     @Test
+    public void testSearchFloatClause() {
+        Search.SearchClause clause;
+        clause = new Search.NumberClause("field", 1.12f);
+        assertEquals("Wrong SQL.", "field = ?", clause.getSql());
+        assertEquals("Wrong Values", "[1.12]", clause.getValues().toString());
+    }
+
+    @Test
     public void testSearchIntegerMin() {
         Search.SearchClause clause;
-        clause = new Search.IntegerClause("field", Integer.MIN_VALUE);
+        clause = new Search.NumberClause("field", Integer.MIN_VALUE);
         assertEquals("Wrong SQL.", "field = ?", clause.getSql());
         assertEquals("Wrong Values", "[-2147483648]", clause.getValues().toString());
     }
@@ -68,7 +77,7 @@ public class SearchTest {
     @Test
     public void testSearchIntegerClauseMax() {
         Search.SearchClause clause;
-        clause = new Search.IntegerClause("field", Integer.MAX_VALUE);
+        clause = new Search.NumberClause("field", Integer.MAX_VALUE);
         assertEquals("Wrong SQL.", "field = ?", clause.getSql());
         assertEquals("Wrong Values", "[2147483647]", clause.getValues().toString());
     }
@@ -76,7 +85,7 @@ public class SearchTest {
     @Test
     public void testIntegerRangeClauseExtreme() {
         Search.SearchClause clause;
-        clause = new Search.IntegerRangeClause("field", Integer.MIN_VALUE, Integer.MAX_VALUE);
+        clause = new Search.NumberRangeClause("field", Integer.MIN_VALUE, Integer.MAX_VALUE);
         assertEquals("Wrong SQL.", "field >= ? AND field <= ?", clause.getSql());
         assertEquals("Wrong Values", "[-2147483648, 2147483647]", clause.getValues().toString());
     }
@@ -84,9 +93,9 @@ public class SearchTest {
     @Test
     public void testIntegerRangeClauseLooped() {
         Search.SearchClause clause;
-        for (int i = -100; i < 100; i++) {
-            for (int j = -100; j < 100; j++) {
-                clause = new Search.IntegerRangeClause("field", i, j);
+        for (int i = -100; i < 101; i += 100) {
+            for (int j = -100; j < 101; j += 100) {
+                clause = new Search.NumberRangeClause("field", i, j);
                 assertEquals("Wrong SQL.", "field >= ? AND field <= ?", clause.getSql());
                 assertEquals("Wrong Values", "[" + i + ", " + j + "]", clause.getValues().toString());
             }
@@ -225,7 +234,7 @@ public class SearchTest {
     @Test
     public void testListItemClauseSimple() {
         Search.ListItemClause clause;
-        clause = new Search.ListItemClause("field", "Item");
+        clause = new Search.ListItemClause("field", Arrays.asList("Item"));
         assertEquals("Wrong SQL.", "field ILIKE ?", clause.getSql());
         assertEquals("Wrong Values", "[%Item%]", clause.getValues().toString());
     }
@@ -239,7 +248,7 @@ public class SearchTest {
     @Test
     public void testListItemClauseSpecial() {
         Search.ListItemClause clause;
-        clause = new Search.ListItemClause("field", "aba\\\\%s\\\\\\\\)\\\\;\\\\\"", "abcd123", "321fds!@#$%^&*();", "[]{}-\234=_+,.<>", "::\"\4132", "");
+        clause = new Search.ListItemClause("field", Arrays.asList("aba\\\\%s\\\\\\\\)\\\\;\\\\\"", "abcd123", "321fds!@#$%^&*();", "[]{}-\234=_+,.<>", "::\"\4132", ""));
         assertEquals("Wrong SQL.", "field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ?", clause.getSql());
         assertEquals("Wrong Values", "[%aba\\\\%s\\\\\\\\)\\\\;\\\\\"%, %abcd123%, %321fds!@#$%^&*();%, %[]{}-\u009C=_+,.<>%, %::\"!32%, %%]", clause.getValues().toString());
     }
@@ -247,18 +256,18 @@ public class SearchTest {
     @Test(expected = NullPointerException.class)
     public void testListItemClauseListOfNull() {
         Search.ListItemClause clause;
-        clause = new Search.ListItemClause(null, null, null, null, null, null, null);
+        clause = new Search.ListItemClause(null, Arrays.asList(null, null, null, null, null, null));
     }
 
     @Test(expected = NullPointerException.class)
     public void testListItemClauseSingleListOfNull() {
         Search.ListItemClause clause;
-        clause = new Search.ListItemClause(null, new String[]{null});
+        clause = new Search.ListItemClause(null, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testListItemClauseEmptyList() {
         Search.ListItemClause clause;
-        clause = new Search.ListItemClause("field");
+        clause = new Search.ListItemClause("field", Collections.emptyList());
     }
 }
