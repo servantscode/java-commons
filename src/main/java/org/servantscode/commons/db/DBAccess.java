@@ -59,21 +59,6 @@ public class DBAccess {
 
     public static LocalDate convert(Date date) { return date != null? date.toLocalDate(): null; }
 
-    public static List<String> parseList(String valueString) {
-        if(isEmpty(valueString))
-            return emptyList();
-
-        String[] values = valueString.split("\\|");
-        return Arrays.asList(values);
-    }
-
-    public static String storeList(List<String> values) {
-        if(values == null || values.isEmpty())
-            return "";
-
-        return String.join("|", values);
-    }
-
     public static <T extends Enum<T>> List<T> parseEnumList(Class<T> clazz, String valueString) {
         if(valueString == null || valueString.isEmpty())
             return emptyList();

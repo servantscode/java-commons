@@ -19,16 +19,16 @@ public abstract class AbstractDBUpgrade extends DBAccess implements ServletConte
         boolean databaseUpdated = false;
 
         LOG.info("Veriyfing database access");
-        for(int i=0; i<3 && !databaseUpdated; i++) {
+        for(int attempt=1; attempt<=3 && !databaseUpdated; attempt++) {
             try (Connection conn = getConnection()) {
                 doUpgrade();
                 databaseUpdated = true;
             } catch (SQLException e) {
-                if(i == 2) throw new RuntimeException("Failed to ensure database integrity.", e);
+                if(attempt == 3) throw new RuntimeException("Failed to ensure database integrity.", e);
 
-                LOG.error("Database connection not available yet. (Retries remaining: " + (2-i) + "): " + e.getMessage());
+                LOG.error("Database connection not available yet. (Retries remaining: " + (3-attempt) + "): " + e.getMessage());
                 try {
-                    Thread.sleep(2*60*1000);
+                    Thread.sleep(attempt^2 *30*1000);
                 } catch (InterruptedException e1) {
                     LOG.error("Database update interrupted: " + e1.getMessage());
                     return;

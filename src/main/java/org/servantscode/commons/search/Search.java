@@ -258,12 +258,12 @@ public class Search {
 
         @Override
         public String getSql() {
-            return items.stream().map(item -> String.format("%s ILIKE ?", field)).collect(Collectors.joining(" OR "));
+            return items.stream().map(item -> String.format("? = any(%s)", field)).collect(Collectors.joining(" OR "));
         }
 
         @Override
         public List<Object> getValues() {
-            return items.stream().map(item -> String.format("%%%s%%", item)).collect(Collectors.toList());
+            return new ArrayList<>(items);
         }
     }
 
