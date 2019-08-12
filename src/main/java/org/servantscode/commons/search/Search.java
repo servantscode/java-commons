@@ -258,7 +258,7 @@ public class Search {
 
         @Override
         public String getSql() {
-            return items.stream().map(item -> String.format("? = any(%s)", field)).collect(Collectors.joining(" OR "));
+            return "(" + items.stream().map(item -> String.format("? = any(%s)", field)).collect(Collectors.joining(" OR ")) + ")";
         }
 
         @Override
