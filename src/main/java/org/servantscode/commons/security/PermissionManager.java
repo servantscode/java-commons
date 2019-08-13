@@ -1,6 +1,11 @@
 package org.servantscode.commons.security;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class PermissionManager {
+    private static final Logger LOG = LogManager.getLogger(PermissionManager.class);
+
     private static ThreadLocal<PermissionManager> LOCAL_INSTANCE = new ThreadLocal<>();
 
     public static void enablePermissions(String[] permissions) {
@@ -8,7 +13,12 @@ public class PermissionManager {
     }
 
     public static boolean hasEnabledPermissions() {
-        return LOCAL_INSTANCE.get() != null;
+        if(LOCAL_INSTANCE.get() == null) {
+            LOG.debug("Called for permissions before they are enabled.", new Exception("Stacktrace:"));
+            return false;
+        }
+
+        return true;
     }
 
     public static boolean canUser(String permission) {
