@@ -243,6 +243,8 @@ public class QueryBuilder {
             return DBAccess.convert((LocalDate)value);
         if(value instanceof ZonedDateTime)
             return DBAccess.convert((ZonedDateTime) value);
+        if(value instanceof Enum)
+            return value.toString();
         return value;
     }
 }
