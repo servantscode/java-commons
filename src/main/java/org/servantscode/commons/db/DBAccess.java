@@ -1,15 +1,14 @@
 package org.servantscode.commons.db;
 
-import com.zaxxer.hikari.HikariDataSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.servantscode.commons.EnvProperty;
+import org.servantscode.commons.search.DeleteBuilder;
+import org.servantscode.commons.search.InsertBuilder;
 import org.servantscode.commons.search.QueryBuilder;
+import org.servantscode.commons.search.UpdateBuilder;
 
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.Date;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -18,9 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static java.lang.String.format;
 import static java.util.Collections.emptyList;
-import static org.servantscode.commons.StringUtils.isEmpty;
 
 public class DBAccess {
     private static Logger LOG = LogManager.getLogger(DBAccess.class);
@@ -42,6 +39,9 @@ public class DBAccess {
     protected static QueryBuilder select(String... selections) { return new QueryBuilder().select(selections); }
     protected static QueryBuilder selectAll() { return new QueryBuilder().select("*"); }
     protected static QueryBuilder count() { return new QueryBuilder().select("count(1)"); }
+    protected static InsertBuilder insertInto(String table) { return new InsertBuilder().into(table); }
+    protected static UpdateBuilder update(String table) { return new UpdateBuilder().update(table); }
+    protected static DeleteBuilder deleteFrom(String table) { return new DeleteBuilder().delete(table); }
 
     protected static <T> T firstOrNull(List<T> items) { return items.isEmpty()? null: items.get(0); }
 

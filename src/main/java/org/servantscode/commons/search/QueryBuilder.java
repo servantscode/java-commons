@@ -19,25 +19,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.Arrays.asList;
 import static org.servantscode.commons.StringUtils.isSet;
 
-public class QueryBuilder {
+public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
     private static Logger LOG = LogManager.getLogger(QueryBuilder.class);
 
-    private enum BuilderState {START, SELECT, FROM, JOIN, WHERE, GROUP, SORT, LIMIT, OFFSET, DONE };
+    private enum BuilderState {START, SELECT, FROM, JOIN, WHERE, GROUP, SORT, LIMIT, OFFSET, DONE};
 
     private List<String> selections = new LinkedList<>();
     private List<String> tables = new LinkedList<>();
     private List<String> joins = new LinkedList<>();
-    private List<String> wheres = new LinkedList<>();
+
     private List<String> groupBy = new LinkedList<>();
     private String sort;
     private boolean limit;
     private boolean offset;
 
-    private List<Object> values = new LinkedList<>();
-
     private BuilderState state = BuilderState.START;
 
-    public QueryBuilder() {}
+    public QueryBuilder() {
+    }
 
     public QueryBuilder select(String... selections) {
         setState(BuilderState.SELECT);
@@ -57,96 +56,25 @@ public class QueryBuilder {
         return this;
     }
 
-    public QueryBuilder withId(int id) {
-        setState(BuilderState.WHERE);
-        this.wheres.add("id=?");
-        values.add(id);
+    public QueryBuilder leftJoin(String join) {
+        setState(BuilderState.JOIN);
+        this.joins.add("LEFT JOIN " + join);
         return this;
     }
 
-    public QueryBuilder where(String clause, Object value) {
+    @Override
+    protected void startFiltering() {
         setState(BuilderState.WHERE);
-        this.wheres.add(clause);
-        values.add(value);
-        return this;
-    }
-
-    public QueryBuilder where(String clause, Object... value) {
-        setState(BuilderState.WHERE);
-        this.wheres.add(clause);
-        values.addAll(Arrays.asList(value));
-        return this;
-    }
-
-    public QueryBuilder where(String clause) {
-        setState(BuilderState.WHERE);
-        this.wheres.add(clause);
-        return this;
-    }
-
-    public QueryBuilder whereIdIn(String field, QueryBuilder subselect) {
-        setState(BuilderState.WHERE);
-        this.wheres.add(String.format("%s IN (%s)", field, subselect.getSql()));
-        values.add(subselect);
-        return this;
-    }
-
-    public QueryBuilder whereIdNotIn(String field, QueryBuilder subselect) {
-        setState(BuilderState.WHERE);
-        this.wheres.add(String.format("%s NOT IN (%s)", field, subselect.getSql()));
-        values.add(subselect);
-        return this;
-    }
-
-    public QueryBuilder inOrg() {
-        return inOrg("org_id", OrganizationContext.orgId());
-    }
-
-    public QueryBuilder inOrg(boolean includeSystem) {
-        return includeSystem?
-                inOrgOrSystem("org_id", OrganizationContext.orgId()):
-                inOrg("org_id", OrganizationContext.orgId());
-    }
-
-    public QueryBuilder inOrg(String field) {
-        return inOrg(field, OrganizationContext.orgId());
-    }
-
-    public QueryBuilder inOrg(String field, boolean includeSystem) {
-        return includeSystem?
-                inOrgOrSystem(field, OrganizationContext.orgId()):
-                inOrg(field, OrganizationContext.orgId());
-    }
-
-    public QueryBuilder inOrg(String field, int orgId) {
-        setState(BuilderState.WHERE);
-        this.wheres.add(String.format("%s=?", field));
-        values.add(orgId);
-        return this;
-    }
-
-    public QueryBuilder inOrgOrSystem(String field, int orgId) {
-        setState(BuilderState.WHERE);
-        this.wheres.add(String.format("(%s=? OR %s IS NULL)", field, field));
-        values.add(orgId);
-        return this;
-    }
-
-    public QueryBuilder search(Search search) {
-        setState(BuilderState.WHERE);
-        if(search != null) {
-            search.getClauses().forEach(clause -> {
-                    this.wheres.add(clause.getSql());
-                    this.values.addAll(clause.getValues());
-                });
-        }
-        return this;
     }
 
     public QueryBuilder groupBy(String... fields) {
         setState(BuilderState.GROUP);
         groupBy.addAll(Arrays.asList(fields));
         return this;
+    }
+
+    public QueryBuilder page(String sort, int start, int count) {
+        return this.sort(sort).limit(count).offset(start);
     }
 
     public QueryBuilder sort(String sort) {
@@ -173,25 +101,6 @@ public class QueryBuilder {
         return this;
     }
 
-    public PreparedStatement prepareStatement(Connection conn) throws SQLException {
-        //Stmt cannot be opened in a try structure, else it will auto close instead of returning.
-        //So we need to open it outselves, and be wary of connection leaks.
-
-        //Error here will not leak as higher level owns the connection and prepareStatement shouldn't leak on error.
-        //We are relying on the underlying prepareStatement() but this seems reasonable.
-        String sql = getSql();
-        LOG.trace("generated sql: " + sql);
-
-        PreparedStatement stmt = conn.prepareStatement(getSql());
-        try {
-            //Error here would leak connection, so catch, close and re-throw.
-            fillStatement(stmt);
-        } catch (Throwable t) {
-            stmt.close();
-            throw t;
-        }
-        return stmt;
-    }
 
     public String getSql() {
         setState(BuilderState.DONE);
@@ -213,38 +122,11 @@ public class QueryBuilder {
         return sql.toString();
     }
 
-    public void fillStatement(PreparedStatement stmt) {
-        fillStatement(stmt, new AtomicInteger(1));
-    }
-
     // ----- Private -----
     private void setState(BuilderState nextState) {
         if(nextState.compareTo(state) < 0)
             throw new IllegalStateException("Cannot " + nextState + " after " + state);
 
         state = nextState;
-    }
-
-    private void fillStatement(PreparedStatement stmt, AtomicInteger pos) {
-        values.forEach(value -> {
-            try {
-                if(value instanceof QueryBuilder)
-                    ((QueryBuilder) value).fillStatement(stmt, pos);
-                else
-                    stmt.setObject(pos.getAndIncrement(), sqlize(value));
-            } catch (SQLException e) {
-                throw new RuntimeException(String.format("Could not populate sql with value: %s at pos: %d\nsql: %s", value, pos.get() - 1, getSql()), e);
-            }
-        });
-    }
-
-    private Object sqlize(Object value) {
-        if(value instanceof LocalDate)
-            return DBAccess.convert((LocalDate)value);
-        if(value instanceof ZonedDateTime)
-            return DBAccess.convert((ZonedDateTime) value);
-        if(value instanceof Enum)
-            return value.toString();
-        return value;
     }
 }
