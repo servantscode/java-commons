@@ -25,6 +25,13 @@ public abstract class FilterableBuilder<T extends FilterableBuilder<T>> extends 
         return (T)this;
     }
 
+    public T with(String field, Object value) {
+        startFiltering();
+        this.wheres.add(field + "=?");
+        values.add(value);
+        return (T)this;
+    }
+
     public T where(String clause, Object value) {
         startFiltering();
         this.wheres.add(clause);

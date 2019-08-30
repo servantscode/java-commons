@@ -13,22 +13,24 @@ import java.sql.SQLException;
 public abstract class AbstractDBUpgrade extends DBAccess implements ServletContextListener {
     private static final Logger LOG = LogManager.getLogger(AbstractDBUpgrade.class);
 
+    private static final int SETUP_ATTEMPTS = 5;
+
     //Do this automatically on service start up. Referenced in each services' web.xml.
     public void contextInitialized(ServletContextEvent arg0)
     {
         boolean databaseUpdated = false;
 
         LOG.info("Veriyfing database access");
-        for(int attempt=1; attempt<=3 && !databaseUpdated; attempt++) {
+        for(int attempt=1; attempt<=SETUP_ATTEMPTS&& !databaseUpdated; attempt++) {
             try (Connection conn = getConnection()) {
                 doUpgrade();
                 databaseUpdated = true;
             } catch (SQLException e) {
-                if(attempt == 3) throw new RuntimeException("Failed to ensure database integrity.", e);
+                if(attempt == SETUP_ATTEMPTS) throw new RuntimeException("Failed to ensure database integrity.", e);
 
-                LOG.error("Database connection not available yet. (Retries remaining: " + (3-attempt) + "): " + e.getMessage());
+                LOG.error("Database connection not available yet. (Retries remaining: " + (SETUP_ATTEMPTS-attempt) + "): " + e.getMessage());
                 try {
-                    Thread.sleep(attempt^2 *30*1000);
+                    Thread.sleep(30*1000);
                 } catch (InterruptedException e1) {
                     LOG.error("Database update interrupted: " + e1.getMessage());
                     return;
