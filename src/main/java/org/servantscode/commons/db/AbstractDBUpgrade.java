@@ -13,7 +13,7 @@ import java.sql.SQLException;
 public abstract class AbstractDBUpgrade extends DBAccess implements ServletContextListener {
     private static final Logger LOG = LogManager.getLogger(AbstractDBUpgrade.class);
 
-    private static final int SETUP_ATTEMPTS = 5;
+    private static final int SETUP_ATTEMPTS = 10;
 
     //Do this automatically on service start up. Referenced in each services' web.xml.
     public void contextInitialized(ServletContextEvent arg0)
