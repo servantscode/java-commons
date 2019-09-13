@@ -54,6 +54,13 @@ public abstract class AbstractDBUpgrade extends DBAccess implements ServletConte
         return verifyExistence(sql, "Could not verify column existence: " + tableName + "(" + columnName + ")");
     }
 
+    protected void ensureColumn(String tableName, String columnName, String columnDefinition) throws SQLException {
+        if(!columnExists(tableName, columnName)) {
+            LOG.info(String.format("--- Adding column %s(%s)", tableName, columnName));
+            runSql(String.format("ALTER TABLE %s ADD COLUMN %s %s", tableName, columnName, columnDefinition));
+        }
+    }
+
     protected boolean runSql(String sql) throws SQLException {
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
