@@ -55,6 +55,7 @@ public class AuthFilter implements ContainerRequestFilter {
     private static final List<RequestType> OPEN_PATHS =
             asList(new RequestType("login"),
                     new RequestType("password/reset"),
+                    new RequestType("POST","registration"),
                     new RequestType("GET", "organization/active"));
 
     private static final Algorithm algorithm = Algorithm.HMAC256(SIGNING_KEY);

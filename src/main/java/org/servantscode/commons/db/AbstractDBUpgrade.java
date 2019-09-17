@@ -21,7 +21,7 @@ public abstract class AbstractDBUpgrade extends DBAccess implements ServletConte
         boolean databaseUpdated = false;
 
         LOG.info("Veriyfing database access");
-        for(int attempt=1; attempt<=SETUP_ATTEMPTS&& !databaseUpdated; attempt++) {
+        for(int attempt=1; attempt<=SETUP_ATTEMPTS && !databaseUpdated; attempt++) {
             try (Connection conn = getConnection()) {
                 doUpgrade();
                 databaseUpdated = true;
