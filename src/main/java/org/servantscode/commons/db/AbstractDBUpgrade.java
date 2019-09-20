@@ -22,13 +22,13 @@ public abstract class AbstractDBUpgrade extends DBAccess implements ServletConte
 
         LOG.info("Veriyfing database access");
         for(int attempt=1; attempt<=SETUP_ATTEMPTS && !databaseUpdated; attempt++) {
-            try (Connection conn = getConnection()) {
+            try {
                 doUpgrade();
                 databaseUpdated = true;
             } catch (SQLException e) {
                 if(attempt == SETUP_ATTEMPTS) throw new RuntimeException("Failed to ensure database integrity.", e);
 
-                LOG.error("Database connection not available yet. (Retries remaining: " + (SETUP_ATTEMPTS-attempt) + "): " + e.getMessage());
+                LOG.error("Database not available yet. (Retries remaining: " + (SETUP_ATTEMPTS-attempt) + "): " + e.getMessage());
                 try {
                     Thread.sleep(30*1000);
                 } catch (InterruptedException e1) {
