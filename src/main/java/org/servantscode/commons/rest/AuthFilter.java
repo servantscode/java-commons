@@ -56,6 +56,12 @@ public class AuthFilter implements ContainerRequestFilter {
             asList(new RequestType("login"),
                     new RequestType("password/reset"),
                     new RequestType("POST","registration"),
+                    new RequestType("GET", "person/maritalstatuses"),
+                    new RequestType("GET", "person/ethnicities"),
+                    new RequestType("GET", "person/languages"),
+                    new RequestType("GET", "person/religions"),
+                    new RequestType("GET", "person/specialneeds"),
+                    new RequestType("GET", "person/phonenumbertypes"),
                     new RequestType("GET", "organization/active"));
 
     private static final Algorithm algorithm = Algorithm.HMAC256(SIGNING_KEY);
