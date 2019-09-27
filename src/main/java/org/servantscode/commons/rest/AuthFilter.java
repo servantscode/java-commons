@@ -56,6 +56,7 @@ public class AuthFilter implements ContainerRequestFilter {
             asList(new RequestType("login"),
                     new RequestType("password/reset"),
                     new RequestType("POST","registration"),
+                    new RequestType("GET", "ping"),
                     new RequestType("GET", "person/maritalstatuses"),
                     new RequestType("GET", "person/ethnicities"),
                     new RequestType("GET", "person/languages"),

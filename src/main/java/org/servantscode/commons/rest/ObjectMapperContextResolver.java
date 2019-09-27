@@ -1,21 +1,14 @@
 package org.servantscode.commons.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.servantscode.commons.ObjectMapperFactory;
 
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Provider;
 
 @Provider
 public class ObjectMapperContextResolver implements ContextResolver<ObjectMapper> {
-    private final ObjectMapper MAPPER;
-
-    {
-        MAPPER = new ObjectMapper();
-        MAPPER.registerModule(new JavaTimeModule());
-        MAPPER.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-    }
+    private final ObjectMapper MAPPER = ObjectMapperFactory.getMapper();
 
     @Override
     public ObjectMapper getContext(Class<?> type) {

@@ -181,9 +181,9 @@ public class Search {
 
         @Override
         public String getSql() {
-            String query = (start != null)? String.format("%s > ?", field): "";
+            String query = (start != null)? String.format("%s >= ?", field): "";
             query += (start != null && end != null)? " AND ": "";
-            query +=  (end != null)? String.format("%s < ?", field): "";
+            query +=  (end != null)? String.format("%s <= ?", field): "";
             return query;
         }
 

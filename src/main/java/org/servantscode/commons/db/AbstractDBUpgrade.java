@@ -25,7 +25,7 @@ public abstract class AbstractDBUpgrade extends DBAccess implements ServletConte
             try {
                 doUpgrade();
                 databaseUpdated = true;
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 if(attempt == SETUP_ATTEMPTS) throw new RuntimeException("Failed to ensure database integrity.", e);
 
                 LOG.error("Database not available yet. (Retries remaining: " + (SETUP_ATTEMPTS-attempt) + "): " + e.getMessage());
