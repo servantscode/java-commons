@@ -3,6 +3,7 @@ package org.servantscode.commons.search;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,8 +33,17 @@ public class DeleteBuilder extends FilterableBuilder<DeleteBuilder> {
     @Override
     protected String getSql() {
         setState(BuilderState.DONE);
+        if(!wheres.isEmpty() && !ors.isEmpty()) {
+            ors.add(wheres);
+            wheres = Collections.emptyList();
+        }
+
         StringBuilder sql = new StringBuilder();
         sql.append("DELETE FROM ").append(table);
+        if(!ors.isEmpty())
+            sql.append(" WHERE (")
+               .append(ors.stream().map(wheres -> String.join(" AND ", wheres)).collect(Collectors.joining(") OR (")))
+               .append(")");
         if(!wheres.isEmpty())
             sql.append(" WHERE ").append(String.join(" AND ", wheres));
 

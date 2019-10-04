@@ -144,7 +144,7 @@ public class SearchTest {
             second = LocalDate.of(2000, 1, 1);
             while (second.isBefore(LocalDate.of(2030, 1, 1))) {
                 clause = new Search.DateRangeClause("field", first, second);
-                assertEquals("Wrong SQL.", "field > ? AND field < ?", clause.getSql());
+                assertEquals("Wrong SQL.", "field >= ? AND field <= ?", clause.getSql());
                 assertEquals("Wrong Values", String.format("[%s, %s]",
                         first,
                         second),
@@ -235,8 +235,8 @@ public class SearchTest {
     public void testListItemClauseSimple() {
         Search.ListItemClause clause;
         clause = new Search.ListItemClause("field", Arrays.asList("Item"));
-        assertEquals("Wrong SQL.", "field ILIKE ?", clause.getSql());
-        assertEquals("Wrong Values", "[%Item%]", clause.getValues().toString());
+        assertEquals("Wrong SQL.", "(? = any(field))", clause.getSql());
+        assertEquals("Wrong Values", "[Item]", clause.getValues().toString());
     }
 
     @Test(expected = NullPointerException.class)
@@ -249,8 +249,8 @@ public class SearchTest {
     public void testListItemClauseSpecial() {
         Search.ListItemClause clause;
         clause = new Search.ListItemClause("field", Arrays.asList("aba\\\\%s\\\\\\\\)\\\\;\\\\\"", "abcd123", "321fds!@#$%^&*();", "[]{}-\234=_+,.<>", "::\"\4132", ""));
-        assertEquals("Wrong SQL.", "field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ? OR field ILIKE ?", clause.getSql());
-        assertEquals("Wrong Values", "[%aba\\\\%s\\\\\\\\)\\\\;\\\\\"%, %abcd123%, %321fds!@#$%^&*();%, %[]{}-\u009C=_+,.<>%, %::\"!32%, %%]", clause.getValues().toString());
+        assertEquals("Wrong SQL.", "(? = any(field) OR ? = any(field) OR ? = any(field) OR ? = any(field) OR ? = any(field) OR ? = any(field))", clause.getSql());
+        assertEquals("Wrong Values", "[aba\\\\%s\\\\\\\\)\\\\;\\\\\", abcd123, 321fds!@#$%^&*();, []{}-\u009C=_+,.<>, ::\"!32, ]", clause.getValues().toString());
     }
 
     @Test(expected = NullPointerException.class)

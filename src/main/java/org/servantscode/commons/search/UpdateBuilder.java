@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.filter.Filterable;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -41,11 +42,20 @@ public class UpdateBuilder extends FilterableBuilder<UpdateBuilder> {
     @Override
     protected String getSql() {
         setState(BuilderState.DONE);
+        if(!wheres.isEmpty() && !ors.isEmpty()) {
+            ors.add(wheres);
+            wheres = Collections.emptyList();
+        }
+
         StringBuilder sql = new StringBuilder();
         sql.append("UPDATE ").append(table);
         if(!fields.isEmpty())
             sql.append(" SET ").append(fields.stream().map(f -> f + "=?").collect(Collectors.joining(", ")));
-        if(!wheres.isEmpty())
+        if(!ors.isEmpty())
+            sql.append(" WHERE (")
+               .append(ors.stream().map(wheres -> String.join(" AND ", wheres)).collect(Collectors.joining(") OR (")))
+               .append(")");
+         if(!wheres.isEmpty())
             sql.append(" WHERE ").append(String.join(" AND ", wheres));
 
         return sql.toString();

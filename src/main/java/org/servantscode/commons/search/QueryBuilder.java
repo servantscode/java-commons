@@ -12,9 +12,11 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.servantscode.commons.StringUtils.isSet;
@@ -104,11 +106,20 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
 
     public String getSql() {
         setState(BuilderState.DONE);
+        if(!wheres.isEmpty() && !ors.isEmpty()) {
+            ors.add(wheres);
+            wheres = Collections.emptyList();
+        }
+
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT ").append(String.join(", ", selections));
         sql.append(" FROM ").append(String.join(", ", tables));
         if(!joins.isEmpty())
             sql.append(" ").append(String.join(" ", joins));
+        if(!ors.isEmpty())
+            sql.append(" WHERE (")
+               .append(ors.stream().map(wheres -> String.join(" AND ", wheres)).collect(Collectors.joining(") OR (")))
+               .append(")");
         if(!wheres.isEmpty())
             sql.append(" WHERE ").append(String.join(" AND ", wheres));
         if(!groupBy.isEmpty())

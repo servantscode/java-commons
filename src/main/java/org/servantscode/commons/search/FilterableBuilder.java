@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 public abstract class FilterableBuilder<T extends FilterableBuilder<T>> extends SqlBuilder {
     private static Logger LOG = LogManager.getLogger(FilterableBuilder.class);
 
+    protected List<List<String>> ors = new LinkedList<>();
     protected List<String> wheres = new LinkedList<>();
 
     protected abstract void startFiltering();
@@ -36,6 +37,13 @@ public abstract class FilterableBuilder<T extends FilterableBuilder<T>> extends 
         startFiltering();
         this.wheres.add(field + "=?");
         values.add(value);
+        return (T)this;
+    }
+
+    public T or() {
+        startFiltering();
+        this.ors.add(this.wheres);
+        this.wheres = new LinkedList<>();
         return (T)this;
     }
 
