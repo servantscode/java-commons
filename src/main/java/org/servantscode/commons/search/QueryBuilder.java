@@ -52,15 +52,37 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
         return this;
     }
 
+    public QueryBuilder from(QueryBuilder query, String alias) {
+        setState(BuilderState.FROM);
+        this.tables.add(String.format("(%s) %s", query.getSql(), alias));
+        this.values.add(query);
+        return this;
+    }
+
     public QueryBuilder join(String... joins) {
         setState(BuilderState.JOIN);
         this.joins.addAll(asList(joins));
         return this;
     }
 
-    public QueryBuilder leftJoin(String join) {
+    public QueryBuilder leftJoin(String join, Object... values) {
         setState(BuilderState.JOIN);
         this.joins.add("LEFT JOIN " + join);
+        this.values.addAll(Arrays.asList(values));
+        return this;
+    }
+
+    public QueryBuilder leftJoinLateral(QueryBuilder query, String alias, String joinOn) {
+        this.setState(BuilderState.JOIN);
+        this.joins.add(String.format("LEFT JOIN LATERAL (%s) %s ON %s", query.getSql(), alias, joinOn));
+        this.values.add(query);
+        return this;
+    }
+
+    public QueryBuilder fullOuterJoin(QueryBuilder query, String alias, String joinOn) {
+        this.setState(BuilderState.JOIN);
+        this.joins.add(String.format("FULL OUTER JOIN (%s) %s ON %s", query.getSql(), alias, joinOn));
+        this.values.add(query);
         return this;
     }
 
