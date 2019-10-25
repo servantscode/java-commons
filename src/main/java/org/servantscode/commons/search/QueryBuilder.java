@@ -72,6 +72,13 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
         return this;
     }
 
+    public QueryBuilder leftJoin(QueryBuilder query, String alias, String joinOn) {
+        this.setState(BuilderState.JOIN);
+        this.joins.add(String.format("LEFT JOIN (%s) %s ON %s", query.getSql(), alias, joinOn));
+        this.values.add(query);
+        return this;
+    }
+
     public QueryBuilder leftJoinLateral(QueryBuilder query, String alias, String joinOn) {
         this.setState(BuilderState.JOIN);
         this.joins.add(String.format("LEFT JOIN LATERAL (%s) %s ON %s", query.getSql(), alias, joinOn));
