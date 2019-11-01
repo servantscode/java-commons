@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -64,6 +65,10 @@ public class ConfigDB extends DBAccess {
         } catch (SQLException e) {
             throw new RuntimeException("Could not patch configuration properties.", e);
         }
+    }
+
+    public void patchConfiguration(String config, String value) {
+        patchConfigurations(Collections.singletonMap(config, value));
     }
 
     public void deleteConfigurations(Set<String> configs) {
