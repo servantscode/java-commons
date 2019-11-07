@@ -66,7 +66,8 @@ public class AuthFilter implements ContainerRequestFilter {
                     new RequestType("GET", "preference"),
                     new RequestType("GET", "relationship/types"),
                     new RequestType("GET", "calendar/public"),
-                    new RequestType("GET", "organization/active"));
+                    new RequestType("GET", "organization/active"),
+                    new RequestType("GET", "parish", true));
 
     private static final Algorithm algorithm = Algorithm.HMAC256(SIGNING_KEY);
     private static final JWTVerifier VERIFIER = JWT.require(algorithm)
