@@ -57,6 +57,19 @@ public abstract class EasyDB<T> extends DBAccess {
         }
     }
 
+    //Requires a count search
+    protected boolean existsAny(QueryBuilder query) {
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = query.prepareStatement(conn);
+             ResultSet rs = stmt.executeQuery();
+        ) {
+
+            return rs.next() && rs.getInt(1) > 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Could not determine data existence.", e);
+        }
+    }
+
     protected boolean create(InsertBuilder cmd) {
         try (Connection conn = getConnection();
              PreparedStatement stmt = cmd.prepareStatement(conn)) {
@@ -79,6 +92,24 @@ public abstract class EasyDB<T> extends DBAccess {
                     throw new RuntimeException("No new key generated.");
 
                 return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Could not create record.", e);
+        }
+    }
+
+    protected long createAndReturnLongKey(InsertBuilder cmd) {
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = cmd.prepareStatement(conn, true)) {
+
+            if(stmt.executeUpdate() == 0)
+                throw new RuntimeException("Could not create record.");
+
+            try (ResultSet rs = stmt.getGeneratedKeys()) {
+                if (!rs.next())
+                    throw new RuntimeException("No new key generated.");
+
+                return rs.getLong(1);
             }
         } catch (SQLException e) {
             throw new RuntimeException("Could not create record.", e);
