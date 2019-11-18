@@ -101,6 +101,10 @@ public abstract class FilterableBuilder<T extends FilterableBuilder<T>> extends 
                 inOrg(field, OrganizationContext.orgId());
     }
 
+    public T inOrg(int orgId) {
+        return inOrg("org_id", orgId);
+    }
+
     public T inOrg(String field, int orgId) {
         startFiltering();
         this.wheres.add(String.format("%s=?", field));
