@@ -57,6 +57,25 @@ public class Search {
         public List<Object> getValues() { return asList(String.format("%%%s%%", value)); }
     }
 
+    public static class GenericClause extends SearchClause {
+        private final String field;
+        private final Object value;
+
+        public GenericClause(String field, Object value) {
+            if (field == null || value == null) {
+                throw new NullPointerException("Can't pass null value to clause");
+            }
+            this.field = field;
+            this.value = value;
+        }
+
+        @Override
+        public String getSql() { return String.format("%s=?", field); }
+
+        @Override
+        public List<Object> getValues() { return asList(value); }
+    }
+
     public static class EnumClause extends SearchClause {
         private final String field;
         private final String value;

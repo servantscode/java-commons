@@ -3,6 +3,7 @@ package org.servantscode.commons.search;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.ReflectionUtils;
+import org.servantscode.commons.search.FieldTransformer.Transformation;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -14,7 +15,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.servantscode.commons.StringUtils.isEmpty;
@@ -25,20 +25,24 @@ public class SearchParser<T> {
 
     private final Class<T> clazz;
     private final String defaultField;
-    private final Map<String, String> fieldMap;
+    private final FieldTransformer transformer;
 
     public SearchParser(Class<T> clazz) {
-        this(clazz, "name", null);
+        this(clazz, "name", new FieldTransformer());
     }
 
     public SearchParser(Class<T> clazz, String defaultField) {
-        this(clazz, defaultField, null);
+        this(clazz, defaultField, new FieldTransformer());
     }
 
     public SearchParser(Class<T> clazz, String defaultField, Map<String, String> fieldMap) {
+        this(clazz, defaultField, new FieldTransformer(fieldMap));
+    }
+
+    public SearchParser(Class<T> clazz, String defaultField, FieldTransformer transformer) {
         this.clazz = clazz;
         this.defaultField = defaultField;
-        this.fieldMap = fieldMap;
+        this.transformer = transformer;
     }
 
     public Search parse(String searchString) {
@@ -111,16 +115,20 @@ public class SearchParser<T> {
         String fieldName = searchBits.length > 1? searchBits[0]: defaultField;
         String value = searchBits[searchBits.length-1];
 
+        Transformation transformation = transformer.get(fieldName);
+
         Class<?> fieldType = ReflectionUtils.getDeepFieldType(clazz, fieldName);
-        if(fieldType == String.class) {
-            return new Search.TextClause(map(fieldName), stripQuotes(value));
+        if(fieldType == null) {
+            return new Search.GenericClause(transformation.fieldName(), transformation.transform(stripQuotes(value)));
+        } else if(fieldType == String.class) {
+            return new Search.TextClause(transformation.fieldName(), stripQuotes(value));
         } else if(fieldType.isEnum()) {
-            return new Search.EnumClause(map(fieldName), value);
+            return new Search.EnumClause(transformation.fieldName(), value);
         } else if(List.class.isAssignableFrom(fieldType)) {
             List<String> items = Arrays.stream(value.split("\\|")).map(this::stripQuotes).collect(toList());
-            return new Search.ListItemClause(map(fieldName), items);
+            return new Search.ListItemClause(transformation.fieldName(), items);
         } else if(fieldType == boolean.class || fieldType == Boolean.class) {
-            return new Search.BooleanClause(map(fieldName), Boolean.parseBoolean(value));
+            return new Search.BooleanClause(transformation.fieldName(), Boolean.parseBoolean(value));
         } else if(fieldType == int.class || fieldType == Integer.class ||
                   fieldType == float.class || fieldType == Float.class ||
                   fieldType == double.class || fieldType == Double.class ||
@@ -128,23 +136,23 @@ public class SearchParser<T> {
             if(value.contains("[")) {
                 //Parsing [date1 TO date2]
                 String[] bits = value.substring(1, value.length()-1).split(" ");
-                return new Search.NumberRangeClause(map(fieldName), parseNumber(bits[0]), parseNumber(bits[2]));
+                return new Search.NumberRangeClause(transformation.fieldName(), parseNumber(bits[0]), parseNumber(bits[2]));
             }
-            return new Search.NumberClause(map(fieldName), parseNumber(value));
+            return new Search.NumberClause(transformation.fieldName(), parseNumber(value));
         } else if(fieldType == LocalDate.class) {
             if(value.contains("[")) {
                 //Parsing [date1 TO date2]
                 String[] bits = value.substring(1, value.length()-1).split(" ");
-                return new Search.DateRangeClause(map(fieldName), parseDate(bits[0]), parseDate(bits[2]));
+                return new Search.DateRangeClause(transformation.fieldName(), parseDate(bits[0]), parseDate(bits[2]));
             }
-            return new Search.DateClause(map(fieldName), parseDate(value));
+            return new Search.DateClause(transformation.fieldName(), parseDate(value));
         } else if(fieldType == ZonedDateTime.class){
             if(!value.contains("["))
                 throw new IllegalArgumentException("Could not process time range: " + value);
 
             //Parsing [date1 TO date2]
             String[] bits = value.substring(1, value.length()-1).split(" ");
-            return new Search.TimeRangeClause(map(fieldName), parseTime(bits[0]), parseTime(bits[2], true));
+            return new Search.TimeRangeClause(transformation.fieldName(), parseTime(bits[0]), parseTime(bits[2], true));
         } else {
             throw new IllegalArgumentException(String.format("Can't figure out what to do with field %s (type: %s)", fieldName, fieldType.getSimpleName()));
         }
@@ -198,11 +206,5 @@ public class SearchParser<T> {
         } catch (Exception e) {
             return null;
         }
-    }
-
-    private String map(String fieldName) {
-        if(fieldMap == null)
-            return fieldName;
-        return fieldMap.getOrDefault(fieldName, fieldName);
     }
 }

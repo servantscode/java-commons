@@ -12,8 +12,11 @@ public class ReflectionUtils {
         String[] fieldPath = fieldName.split("\\.");
 
         Class<?> currentClazz = clazz;
-        for(String field: fieldPath)
+        for(String field: fieldPath) {
             currentClazz = getFieldType(currentClazz, field);
+            if(currentClazz == null)
+                return null;
+        }
 
         return currentClazz;
     }
@@ -21,7 +24,7 @@ public class ReflectionUtils {
     public static Class<?> getFieldType(Class<?> clazz, String fieldName) {
         Method getter = getGetter(clazz, fieldName);
         if(getter == null)
-            throw new IllegalArgumentException("No such field: " + fieldName);
+            return null;
         return getter.getReturnType();
     }
 

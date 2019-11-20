@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.servantscode.commons.StringUtils.isSet;
 import static org.servantscode.commons.db.DBAccess.convert;
 
 public abstract class ReportStreamingOutput implements StreamingOutput {
@@ -66,9 +67,13 @@ public abstract class ReportStreamingOutput implements StreamingOutput {
 
         LinkedList<String> data = new LinkedList<>();
         for(String field: fields)
-            data.add(extractColumn(rs, field));
+            data.add(quote(extractColumn(rs, field)));
 
         return data.stream().map(d -> d == null? "": d).collect(Collectors.joining(","));
+    }
+
+    private String quote(String value) {
+        return isSet(value)? "\"" + value + "\"": "";
     }
 
     private String extractColumn(ResultSet rs, String field) throws SQLException {

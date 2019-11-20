@@ -23,6 +23,10 @@ public abstract class EasyDB<T> extends DBAccess {
         this.searchParser = new SearchParser<>(clazz, defaultField, fieldMap);
     }
 
+    public EasyDB(Class<T> clazz, String defaultField, FieldTransformer transformer)  {
+        this.searchParser = new SearchParser<>(clazz, defaultField, transformer);
+    }
+
     protected int getCount(QueryBuilder query) {
         try (Connection conn = getConnection();
              PreparedStatement stmt = query.prepareStatement(conn);
