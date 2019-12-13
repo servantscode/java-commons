@@ -46,6 +46,13 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
         return this;
     }
 
+    public QueryBuilder selectWith(String selection, Object... values) {
+        setState(BuilderState.SELECT);
+        this.selections.add(selection);
+        this.values.addAll(asList(values));
+        return this;
+    }
+
     public QueryBuilder from(String... tables) {
         setState(BuilderState.FROM);
         this.tables.addAll(asList(tables));

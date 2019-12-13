@@ -24,6 +24,7 @@ public abstract class AbstractServiceClient {
 
     public abstract String getReferralUrl();
     public abstract String getAuthorization();
+    public abstract Map<String, String> getAdditionalHeaders();
 
     protected AbstractServiceClient(String baseUrl) {
         client = ClientBuilder.newClient(new ClientConfig().register(this.getClass()));
@@ -163,6 +164,12 @@ public abstract class AbstractServiceClient {
             builder = builder.header("referer", urlPrefix);
         if(isSet(authorization))
             builder = builder.header("Authorization", authorization);
+
+        Map<String, String> headers = getAdditionalHeaders();
+        if(headers != null) {
+            for(Map.Entry<String, String> entry: headers.entrySet())
+                builder = builder.header(entry.getKey(), entry.getValue());
+        }
 
         return builder;
     }
