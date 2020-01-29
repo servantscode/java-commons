@@ -120,7 +120,7 @@ public class AuthFilter implements ContainerRequestFilter {
 
 
         RequestType request = new RequestType(requestContext.getMethod().toUpperCase(), uriPath.toLowerCase());
-        LOG.trace("Authorizing request: " + request);
+//        LOG.trace("Authorizing request: " + request);
 
         // No token required for login and password resets...
         // TODO: Is there a better way to do this with routing?

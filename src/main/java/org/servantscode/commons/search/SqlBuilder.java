@@ -33,8 +33,7 @@ public abstract class SqlBuilder {
 
         //Error here will not leak as higher level owns the connection and prepareStatement shouldn't leak on error.
         //We are relying on the underlying prepareStatement() but this seems reasonable.
-        String sql = getSql();
-        LOG.trace("generated sql: " + sql);
+//        LOG.trace("generated sql: " + getSql());
 
         PreparedStatement stmt = returnNewKeys?
                 conn.prepareStatement(getSql(), RETURN_GENERATED_KEYS):
@@ -43,6 +42,7 @@ public abstract class SqlBuilder {
             //Error here would leak connection, so catch, close and re-throw.
             fillStatement(stmt);
         } catch (Throwable t) {
+            LOG.error("Failed to populate generated sql: " + getSql());
             stmt.close();
             throw t;
         }

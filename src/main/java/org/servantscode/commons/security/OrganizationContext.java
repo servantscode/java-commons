@@ -29,7 +29,7 @@ public class OrganizationContext {
     private Organization enabledOrganization;
 
     private OrganizationContext(String hostName) {
-        LOG.debug("Organization set to: " + hostName);
+//        LOG.debug("Organization set to: " + hostName);
         enabledOrganization = db.getOrganization(hostName);
     }
 
