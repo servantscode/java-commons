@@ -13,11 +13,14 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
+import static org.servantscode.commons.StringUtils.isEmpty;
 
 public class DBAccess {
     private static Logger LOG = LogManager.getLogger(DBAccess.class);
@@ -72,6 +75,37 @@ public class DBAccess {
             return "";
 
         return values.stream().map(Enum::toString).collect(Collectors.joining("|"));
+    }
+
+    public static String encodeDateList(List<LocalDate> dates) {
+        return encodeList(dates, date->date.format(DateTimeFormatter.ISO_DATE));
+    }
+
+    public static List<LocalDate> decodeDateList(String dateString) {
+        return decodeList(dateString, LocalDate::parse);
+    }
+
+    public static String encodeList(List<String> items) {
+        return encodeList(items, i->i);
+    }
+
+    public static List<String> decodeList(String data) {
+        return decodeList(data, i->i);
+    }
+
+    public static <T> String encodeList(List<T> items, Function<T, String> mapper) {
+        if(items == null || items.isEmpty())
+            return "";
+
+        return items.stream().map(mapper).collect(Collectors.joining("|"));
+    }
+
+    public static <T> List<T> decodeList(String data, Function<String, T> mapper) {
+        if(isEmpty(data))
+            return emptyList();
+
+        String[] dates = data.split("\\|");
+        return Arrays.stream(dates).map(mapper).collect(Collectors.toList());
     }
 
     public static String stringify(Enum<?> value) { return value == null? null: value.toString(); }
