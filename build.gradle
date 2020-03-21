@@ -14,6 +14,7 @@ repositories {
 }
 
 dependencies {
+    implementation group: 'org.apache.pdfbox', name: 'pdfbox', version: '2.0.17'
     implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.9.8'
     implementation group: 'com.auth0', name: 'java-jwt',  version: '3.4.1'
     implementation group: 'org.glassfish.jersey.core', name: 'jersey-client', version: '2.27'
