@@ -1,5 +1,7 @@
 package org.servantscode.commons.db;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.search.*;
 
 import java.sql.Connection;
@@ -12,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class EasyDB<T> extends DBAccess {
+    private static final Logger LOG = LogManager.getLogger(EasyDB.class);
 
     protected SearchParser<T> searchParser;
 
@@ -35,6 +38,7 @@ public abstract class EasyDB<T> extends DBAccess {
             if (rs.next())
                 return rs.getInt(1);
         } catch (SQLException e) {
+            LOG.error("SQL failed: " + query.getSql());
             throw new RuntimeException("Could not retrieve item count.", e);
         }
         return 0;
@@ -46,6 +50,7 @@ public abstract class EasyDB<T> extends DBAccess {
         ) {
             return processResults(stmt);
         } catch (SQLException e) {
+            LOG.error("SQL failed: " + query.getSql());
             throw new RuntimeException("Could not retrieve items.", e);
         }
     }
@@ -57,6 +62,7 @@ public abstract class EasyDB<T> extends DBAccess {
 
             return firstOrNull(processResults(stmt));
         } catch (SQLException e) {
+            LOG.error("SQL failed: " + query.getSql());
             throw new RuntimeException("Could not retrieve item.", e);
         }
     }
@@ -70,6 +76,7 @@ public abstract class EasyDB<T> extends DBAccess {
 
             return rs.next() && rs.getInt(1) > 0;
         } catch (SQLException e) {
+            LOG.error("SQL failed: " + query.getSql());
             throw new RuntimeException("Could not determine data existence.", e);
         }
     }
@@ -80,6 +87,7 @@ public abstract class EasyDB<T> extends DBAccess {
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
+            LOG.error("SQL failed: " + cmd.getSql());
             throw new RuntimeException("Could not create record.", e);
         }
     }
@@ -98,6 +106,7 @@ public abstract class EasyDB<T> extends DBAccess {
                 return rs.getInt(1);
             }
         } catch (SQLException e) {
+            LOG.error("SQL failed: " + cmd.getSql());
             throw new RuntimeException("Could not create record.", e);
         }
     }
@@ -116,6 +125,7 @@ public abstract class EasyDB<T> extends DBAccess {
                 return rs.getLong(1);
             }
         } catch (SQLException e) {
+            LOG.error("SQL failed: " + cmd.getSql());
             throw new RuntimeException("Could not create record.", e);
         }
     }
@@ -126,6 +136,7 @@ public abstract class EasyDB<T> extends DBAccess {
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
+            LOG.error("SQL failed: " + cmd.getSql());
             throw new RuntimeException("Could not update record.", e);
         }
     }
@@ -136,6 +147,7 @@ public abstract class EasyDB<T> extends DBAccess {
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
+            LOG.error("SQL failed: " + cmd.getSql());
             throw new RuntimeException("Could not delete record.", e);
         }
     }

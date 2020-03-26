@@ -51,7 +51,7 @@ public class InsertBuilder extends SqlBuilder {
     }
 
     @Override
-    protected String getSql() {
+    public String getSql() {
         setState(BuilderState.DONE);
         StringBuilder sql = new StringBuilder();
         sql.append("INSERT INTO ").append(table);

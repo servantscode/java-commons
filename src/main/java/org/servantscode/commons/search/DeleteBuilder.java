@@ -31,7 +31,7 @@ public class DeleteBuilder extends FilterableBuilder<DeleteBuilder> {
     }
 
     @Override
-    protected String getSql() {
+    public String getSql() {
         setState(BuilderState.DONE);
         if(!wheres.isEmpty() && !ors.isEmpty()) {
             ors.add(wheres);

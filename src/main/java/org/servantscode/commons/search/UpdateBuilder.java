@@ -40,7 +40,7 @@ public class UpdateBuilder extends FilterableBuilder<UpdateBuilder> {
     }
 
     @Override
-    protected String getSql() {
+    public String getSql() {
         setState(BuilderState.DONE);
         if(!wheres.isEmpty() && !ors.isEmpty()) {
             ors.add(wheres);

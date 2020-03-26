@@ -20,7 +20,7 @@ public abstract class SqlBuilder {
     private static Logger LOG = LogManager.getLogger(SqlBuilder.class);
 
     protected List<Object> values = new LinkedList<>();
-    protected abstract String getSql();
+    public abstract String getSql();
 
 
     public PreparedStatement prepareStatement(Connection conn) throws SQLException {
