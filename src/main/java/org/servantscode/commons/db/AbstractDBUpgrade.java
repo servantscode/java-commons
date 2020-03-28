@@ -54,6 +54,11 @@ public abstract class AbstractDBUpgrade extends DBAccess implements ServletConte
         return verifyExistence(sql, "Could not verify column existence: " + tableName + "(" + columnName + ")");
     }
 
+    protected boolean indexExists(String tableName, String indexName) throws SQLException {
+        String sql = String.format("SELECT EXISTS (SELECT constraint_name FROM information_schema.table_constraints WHERE constraint_name='%s' AND table_name='%s')", indexName, tableName);
+        return verifyExistence(sql, "Could not verify index existence: " + tableName + "(" + indexName + ")");
+    }
+
     protected boolean columnTypeMatches(String tableName, String columnName, String columnType) throws SQLException {
         String sql = String.format("SELECT EXISTS (SELECT column_name FROM information_schema.columns WHERE table_name = '%s' and column_name='%s' AND data_type='%s')", tableName, columnName, columnType.toLowerCase());
         return verifyExistence(sql, "Could not verify column type: " + tableName + "(" + columnName + ") = " + columnType);
