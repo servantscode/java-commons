@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class FilterableBuilder<T extends FilterableBuilder<T>> extends SqlBuilder {
     private static Logger LOG = LogManager.getLogger(FilterableBuilder.class);
@@ -33,10 +34,25 @@ public abstract class FilterableBuilder<T extends FilterableBuilder<T>> extends 
         return (T)this;
     }
 
+    public T withIdIn(List<Integer> ids) {
+        return withAny("id", ids);
+//        startFiltering();
+//        this.wheres.add(String.format("id in (%s)", ids.stream().map(id -> "?").collect(Collectors.joining(","))));
+//        values.addAll(ids);
+//        return (T)this;
+    }
+
     public T with(String field, Object value) {
         startFiltering();
         this.wheres.add(field + "=?");
         values.add(value);
+        return (T)this;
+    }
+
+    public T withAny(String field, List<? extends Object> ids) {
+        startFiltering();
+        this.wheres.add(String.format("%s in (%s)", field, ids.stream().map(id -> "?").collect(Collectors.joining(","))));
+        values.addAll(ids);
         return (T)this;
     }
 
