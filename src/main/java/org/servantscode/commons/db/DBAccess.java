@@ -27,10 +27,9 @@ public class DBAccess {
 
     private static ConnectionFactory factory;
     static {
-        factory = new ConnectionFactory();
+        factory = new PostgresConnectionFactory();
     }
 
-    // Mocking access for Testing.
     public static void setConnectionFactory(ConnectionFactory f) {
         factory = f;
     }

@@ -11,6 +11,12 @@ public class OrganizationContext {
     private static ThreadLocal<OrganizationContext> LOCAL_INSTANCE = new ThreadLocal<>();
     private static OrganizationDB db = new OrganizationDB();
 
+    private static boolean REQUIRE_ORG = true;
+
+    public static void disableMultiTenancy() {
+        REQUIRE_ORG = false;
+    }
+
     public static void enableOrganization(String hostName) { LOCAL_INSTANCE.set(new OrganizationContext(hostName)); }
 
     public static Organization getOrganization() {
@@ -30,10 +36,13 @@ public class OrganizationContext {
 
     private OrganizationContext(String hostName) {
 //        LOG.debug("Organization set to: " + hostName);
-        enabledOrganization = db.getOrganization(hostName);
+        if(REQUIRE_ORG)
+            enabledOrganization = db.getOrganization(hostName);
     }
 
     private Organization getEnabledOrganization() {
+        if(!REQUIRE_ORG)
+            throw new IllegalStateException("Multitenancy is disabled for this service. No organization is available.");
         return enabledOrganization;
     }
 }

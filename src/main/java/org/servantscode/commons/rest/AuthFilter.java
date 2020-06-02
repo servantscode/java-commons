@@ -9,7 +9,6 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
-import org.glassfish.jersey.inject.hk2.RequestContext;
 import org.servantscode.commons.EnvProperty;
 import org.servantscode.commons.Organization;
 import org.servantscode.commons.Session;
@@ -24,16 +23,14 @@ import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
 import java.net.URI;
 import java.time.ZonedDateTime;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.servantscode.commons.StringUtils.isEmpty;
@@ -52,23 +49,31 @@ public class AuthFilter implements ContainerRequestFilter {
             asList(new RequestType("password"),
                     new RequestType("GET", "photo/public/", true));
 
-    private static final List<RequestType> OPEN_PATHS =
-            asList(new RequestType("login"),
-                    new RequestType("password/reset"),
-                    new RequestType("POST","registration"),
-                    new RequestType("GET", "ping"),
-                    new RequestType("GET", "person/maritalstatuses"),
-                    new RequestType("GET", "person/ethnicities"),
-                    new RequestType("GET", "person/languages"),
-                    new RequestType("GET", "person/religions"),
-                    new RequestType("GET", "person/specialneeds"),
-                    new RequestType("GET", "person/phonenumbertypes"),
-                    new RequestType("GET", "preference"),
-                    new RequestType("GET", "relationship/types"),
-                    new RequestType("GET", "calendar/public"),
-                    new RequestType("GET", "organization/active"),
-                    new RequestType("GET", "parish", true),
-                    new RequestType("GET", "pushpay", true));
+    private static final List<RequestType> OPEN_PATHS = new LinkedList<>();
+    public static final String ANY = "*";
+
+    static {
+        OPEN_PATHS.addAll(asList(new RequestType("login"),
+                new RequestType("password/reset"),
+                new RequestType("POST", "registration"),
+                new RequestType("GET", "ping"),
+                new RequestType("GET", "preference"),
+                new RequestType("GET", "relationship/types"),
+                new RequestType("GET", "calendar/public"),
+                new RequestType("GET", "organization/active"),
+                new RequestType("GET", "parish", true),
+                new RequestType("GET", "pushpay", true)));
+    }
+
+    public static void registerPublicApi(String method, String path, boolean includeSubPaths) {
+        OPEN_PATHS.add(new RequestType(method.toUpperCase(), path.toLowerCase(), !includeSubPaths));
+        LOG.debug("Added open path: " + path);
+    }
+
+    public static void registerPublicService(String path) {
+        OPEN_PATHS.add(new RequestType(ANY, path.toLowerCase(), true));
+        LOG.debug("Added open path: " + path);
+    }
 
     private static final Algorithm algorithm = Algorithm.HMAC256(SIGNING_KEY);
     private static final JWTVerifier VERIFIER = JWT.require(algorithm)
@@ -94,12 +99,17 @@ public class AuthFilter implements ContainerRequestFilter {
         UriInfo uri = requestContext.getUriInfo();
 
         String org = requestContext.getHeaderString("x-sc-org");
+        if(isSet(org))
+            LOG.trace("Found incoming sc-org header: " + org);
         if(isEmpty(org)) {
             String host = requestContext.getHeaderString("referer");
             host = isSet(host) ? URI.create(host).getHost() : requestContext.getHeaderString("x-forwarded-host");
             host = isSet(host) ? host : uri.getRequestUri().getHost();
             org = host.split("\\.")[0];
         }
+
+        if(isSet(org))
+            LOG.trace("enabling org: " + org);
 
         OrganizationContext.enableOrganization(org);
         ThreadContext.put("request.org", org);
@@ -243,7 +253,7 @@ public class AuthFilter implements ContainerRequestFilter {
             if(!(obj instanceof RequestType))
                 return false;
             RequestType other = (RequestType)obj;
-            return this.method.equals(other.method) &&
+            return (this.method.equals(ANY) || other.method.equals(ANY) || this.method.equals(other.method)) &&
                         ((this.partial && other.path.startsWith(this.path)) ||
                          (other.partial && this.path.startsWith(other.path)) ||
                          this.path.equals(other.path));

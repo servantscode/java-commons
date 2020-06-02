@@ -21,25 +21,15 @@ public abstract class FilterableBuilder<T extends FilterableBuilder<T>> extends 
     public FilterableBuilder() {}
 
     public T withId(int id) {
-        startFiltering();
-        this.wheres.add("id=?");
-        values.add(id);
-        return (T)this;
+        return with("id", id);
     }
 
     public T withId(long id) {
-        startFiltering();
-        this.wheres.add("id=?");
-        values.add(id);
-        return (T)this;
+        return with("id", id);
     }
 
     public T withIdIn(List<Integer> ids) {
         return withAny("id", ids);
-//        startFiltering();
-//        this.wheres.add(String.format("id in (%s)", ids.stream().map(id -> "?").collect(Collectors.joining(","))));
-//        values.addAll(ids);
-//        return (T)this;
     }
 
     public T with(String field, Object value) {
