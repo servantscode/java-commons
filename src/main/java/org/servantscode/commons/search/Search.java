@@ -8,9 +8,7 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,6 +16,11 @@ import static java.util.Arrays.asList;
 
 public class Search {
     private static final Logger LOG = LogManager.getLogger(Search.class);
+
+    public enum DBType {POSTGRES, MYSQL};
+
+    private static DBType type = DBType.POSTGRES;
+    public static void setDBType(DBType newType) { type = newType; }
 
     private List<SearchClause> clauses;
 
@@ -51,7 +54,9 @@ public class Search {
         }
 
         @Override
-        public String getSql() { return String.format("%s ILIKE ?", field); }
+        public String getSql() {
+            return String.format("%s %s ?", field, type == DBType.POSTGRES? "ILIKE": "LIKE");
+        }
 
         @Override
         public List<Object> getValues() { return asList(String.format("%%%s%%", value)); }

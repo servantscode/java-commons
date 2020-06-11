@@ -161,5 +161,16 @@ public abstract class EasyDB<T> extends DBAccess {
         }
     }
 
+    protected boolean executeUpdate(SqlBuilder cmd) {
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = cmd.prepareStatement(conn)) {
+
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            LOG.error("SQL failed: " + cmd.getSql());
+            throw new RuntimeException("Could not run command.", e);
+        }
+    }
+
     protected abstract T processRow(ResultSet r) throws SQLException;
 }
