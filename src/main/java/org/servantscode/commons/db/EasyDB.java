@@ -18,6 +18,8 @@ public abstract class EasyDB<T> extends DBAccess {
 
     protected SearchParser<T> searchParser;
 
+    private boolean logSql = false;
+
     public EasyDB(Class<T> clazz, String defaultField)  {
         this(clazz, defaultField, Collections.emptyMap());
     }
@@ -30,7 +32,10 @@ public abstract class EasyDB<T> extends DBAccess {
         this.searchParser = new SearchParser<>(clazz, defaultField, transformer);
     }
 
+    protected void setLogSql(boolean logSql) { this.logSql = logSql; }
+
     protected int getCount(QueryBuilder query) {
+        if(logSql) LOG.trace("Executing: " + query.getSql());
         try (Connection conn = getConnection();
              PreparedStatement stmt = query.prepareStatement(conn);
              ResultSet rs = stmt.executeQuery()) {
@@ -45,6 +50,7 @@ public abstract class EasyDB<T> extends DBAccess {
     }
 
     protected List<T> get(QueryBuilder query) {
+        if(logSql) LOG.trace("Executing: " + query.getSql());
         try ( Connection conn = getConnection();
               PreparedStatement stmt = query.prepareStatement(conn)
         ) {
@@ -56,6 +62,7 @@ public abstract class EasyDB<T> extends DBAccess {
     }
 
     protected T getOne(QueryBuilder query) {
+        if(logSql) LOG.trace("Executing: " + query.getSql());
         try (Connection conn = getConnection();
              PreparedStatement stmt = query.prepareStatement(conn);
         ) {
@@ -69,6 +76,7 @@ public abstract class EasyDB<T> extends DBAccess {
 
     //Requires a count search
     protected boolean existsAny(QueryBuilder query) {
+        if(logSql) LOG.trace("Executing: " + query.getSql());
         try (Connection conn = getConnection();
              PreparedStatement stmt = query.prepareStatement(conn);
              ResultSet rs = stmt.executeQuery();
@@ -82,6 +90,7 @@ public abstract class EasyDB<T> extends DBAccess {
     }
 
     protected boolean create(InsertBuilder cmd) {
+        if(logSql) LOG.trace("Executing: " + cmd.getSql());
         try (Connection conn = getConnection();
              PreparedStatement stmt = cmd.prepareStatement(conn)) {
 
@@ -93,6 +102,7 @@ public abstract class EasyDB<T> extends DBAccess {
     }
 
     protected int createAndReturnKey(InsertBuilder cmd) {
+        if(logSql) LOG.trace("Executing: " + cmd.getSql());
         try (Connection conn = getConnection();
              PreparedStatement stmt = cmd.prepareStatement(conn, true)) {
 
@@ -112,6 +122,7 @@ public abstract class EasyDB<T> extends DBAccess {
     }
 
     protected long createAndReturnLongKey(InsertBuilder cmd) {
+        if(logSql) LOG.trace("Executing: " + cmd.getSql());
         try (Connection conn = getConnection();
              PreparedStatement stmt = cmd.prepareStatement(conn, true)) {
 
@@ -131,6 +142,7 @@ public abstract class EasyDB<T> extends DBAccess {
     }
 
     protected boolean update(UpdateBuilder cmd) {
+        if(logSql) LOG.trace("Executing: " + cmd.getSql());
         try (Connection conn = getConnection();
              PreparedStatement stmt = cmd.prepareStatement(conn)) {
 
@@ -142,6 +154,7 @@ public abstract class EasyDB<T> extends DBAccess {
     }
 
     protected boolean delete(DeleteBuilder cmd) {
+        if(logSql) LOG.trace("Executing: " + cmd.getSql());
         try (Connection conn = getConnection();
              PreparedStatement stmt = cmd.prepareStatement(conn)) {
 
@@ -152,16 +165,8 @@ public abstract class EasyDB<T> extends DBAccess {
         }
     }
 
-    protected List<T> processResults(PreparedStatement stmt) throws SQLException {
-        try(ResultSet rs = stmt.executeQuery()) {
-            List<T> sessions = new LinkedList<>();
-            while (rs.next())
-                sessions.add(processRow(rs));
-            return sessions;
-        }
-    }
-
     protected boolean executeUpdate(SqlBuilder cmd) {
+        if(logSql) LOG.trace("Executing: " + cmd.getSql());
         try (Connection conn = getConnection();
              PreparedStatement stmt = cmd.prepareStatement(conn)) {
 
@@ -169,6 +174,15 @@ public abstract class EasyDB<T> extends DBAccess {
         } catch (SQLException e) {
             LOG.error("SQL failed: " + cmd.getSql());
             throw new RuntimeException("Could not run command.", e);
+        }
+    }
+
+    protected List<T> processResults(PreparedStatement stmt) throws SQLException {
+        try(ResultSet rs = stmt.executeQuery()) {
+            List<T> sessions = new LinkedList<>();
+            while (rs.next())
+                sessions.add(processRow(rs));
+            return sessions;
         }
     }
 

@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public abstract class FilterableBuilder<T extends FilterableBuilder<T>> extends SqlBuilder {
     private static Logger LOG = LogManager.getLogger(FilterableBuilder.class);
@@ -34,8 +33,12 @@ public abstract class FilterableBuilder<T extends FilterableBuilder<T>> extends 
 
     public T with(String field, Object value) {
         startFiltering();
-        this.wheres.add(field + "=?");
-        values.add(value);
+        if(value == null) {
+            this.wheres.add(field + " IS NULL");
+        } else {
+            this.wheres.add(field + "=?");
+            values.add(value);
+        }
         return (T)this;
     }
 
