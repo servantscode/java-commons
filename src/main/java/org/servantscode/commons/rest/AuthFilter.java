@@ -11,8 +11,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
 import org.servantscode.commons.EnvProperty;
 import org.servantscode.commons.Organization;
-import org.servantscode.commons.Session;
-import org.servantscode.commons.db.SessionDB;
 import org.servantscode.commons.security.OrganizationContext;
 import org.servantscode.commons.security.PermissionManager;
 import org.servantscode.commons.security.SCSecurityContext;
@@ -27,7 +25,6 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 import javax.ws.rs.ext.Provider;
 import java.net.URI;
-import java.time.ZonedDateTime;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -35,7 +32,6 @@ import java.util.UUID;
 import static java.util.Arrays.asList;
 import static org.servantscode.commons.StringUtils.isEmpty;
 import static org.servantscode.commons.StringUtils.isSet;
-import static org.servantscode.commons.security.SCSecurityContext.SYSTEM;
 
 @Provider
 @Priority(2000)
@@ -43,16 +39,18 @@ public class AuthFilter implements ContainerRequestFilter {
     private static final Logger LOG = LogManager.getLogger(AuthFilter.class);
 
     private static final String SIGNING_KEY = EnvProperty.get("JWT_KEY");
+    private static final String JWT_ISSUER = EnvProperty.get("JWT_ISSUER", "Servant's Code");
 
     //Make sure these lists are lower cased for case-insensitive comparisons
-    private static final List<RequestType> OPTIONAL_TOKEN_PATHS =
-            asList(new RequestType("password"),
-                    new RequestType("GET", "photo/public/", true));
+    private static final List<RequestType> OPTIONAL_TOKEN_PATHS = new LinkedList<>();
 
     private static final List<RequestType> OPEN_PATHS = new LinkedList<>();
     public static final String ANY = "*";
 
     static {
+        OPTIONAL_TOKEN_PATHS.addAll(asList(new RequestType("password"),
+                new RequestType("GET", "photo/public/", true)));
+
         OPEN_PATHS.addAll(asList(new RequestType("login"),
                 new RequestType("password/reset"),
                 new RequestType("POST", "registration"),
@@ -65,30 +63,34 @@ public class AuthFilter implements ContainerRequestFilter {
                 new RequestType("GET", "pushpay", true)));
     }
 
+    public static void registerOptionalTokenApi(String method, String path, boolean includeSubPaths) {
+        OPTIONAL_TOKEN_PATHS.add(new RequestType(method.toUpperCase(), path.toLowerCase(), includeSubPaths));
+        LOG.debug("Added optional token path: " + path);
+    }
+
     public static void registerPublicApi(String method, String path, boolean includeSubPaths) {
-        OPEN_PATHS.add(new RequestType(method.toUpperCase(), path.toLowerCase(), !includeSubPaths));
+        OPEN_PATHS.add(new RequestType(method.toUpperCase(), path.toLowerCase(), includeSubPaths));
         LOG.debug("Added open path: " + path);
     }
 
     public static void registerPublicService(String path) {
-        OPEN_PATHS.add(new RequestType(ANY, path.toLowerCase(), true));
-        LOG.debug("Added open path: " + path);
+        registerPublicApi("*", path, true);
     }
 
     private static final Algorithm algorithm = Algorithm.HMAC256(SIGNING_KEY);
     private static final JWTVerifier VERIFIER = JWT.require(algorithm)
             .acceptLeeway(1)   //1 sec leeway for date checks to account for clock slop
-            .withIssuer("Servant's Code")
+            .withIssuer(JWT_ISSUER)
             .build();
+
+    private static SessionVerifier SESSION_VERIFIER = new DefaultSessionVerifier();
+
+    public static void setSessionVerifier(SessionVerifier sessionVerifier) {
+        SESSION_VERIFIER = sessionVerifier;
+    }
 
     @Context
     private HttpServletRequest request;
-
-    private SessionDB db;
-
-    public AuthFilter() {
-        this.db = new SessionDB();
-    }
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
@@ -122,6 +124,9 @@ public class AuthFilter implements ContainerRequestFilter {
         String callingIp = request.getRemoteAddr();
         ThreadContext.put("request.origin", callingIp);
 
+        String userAgent = requestContext.getHeaderString("user-agent");
+        ThreadContext.put("request.user.agent", userAgent);
+
         ThreadContext.put("transaction.id", requestContext.getHeaderString("x-sc-transaction-id"));
         if (isEmpty(ThreadContext.get("transaction.id")))
             ThreadContext.put("transaction.id", UUID.randomUUID().toString());
@@ -130,7 +135,7 @@ public class AuthFilter implements ContainerRequestFilter {
 
 
         RequestType request = new RequestType(requestContext.getMethod().toUpperCase(), uriPath.toLowerCase());
-//        LOG.trace("Authorizing request: " + request);
+        LOG.trace("Authorizing request: " + request);
 
         // No token required for login and password resets...
         // TODO: Is there a better way to do this with routing?
@@ -149,25 +154,19 @@ public class AuthFilter implements ContainerRequestFilter {
         String user = getUserName(jwt);
         ThreadContext.put("user", user);
 
-        Organization activeOrg = OrganizationContext.getOrganization();
-        if(activeOrg == null || !activeOrg.getName().equals(getOrg(jwt)))
-            throw new NotAuthorizedException("Not Authorized");
-
-        if(!user.equals(SYSTEM)) {
-            Session activeSession = db.getSessionByToken(token);
-            if (activeSession == null || activeSession.getExpiration().isBefore(ZonedDateTime.now())) {
+        if(OrganizationContext.isMultiTenant()) {
+            Organization activeOrg = OrganizationContext.getOrganization();
+            if (activeOrg == null || !activeOrg.getName().equals(getOrg(jwt)))
                 throw new NotAuthorizedException("Not Authorized");
-            } else if (!activeSession.getIp().equals(callingIp)) {
-                LOG.info("Encountered change in calling ip. %s => %s", activeSession.getIp(), callingIp);
-                activeSession.setIp(callingIp);
-                db.updateCallingIp(activeSession);
-            }
         }
+
+        SESSION_VERIFIER.verifySession(callingIp, token, user);
 
         enableRole(jwt);
         SecurityContext context = createContext(requestContext.getUriInfo(), jwt);
         requestContext.setSecurityContext(context);
     }
+
 
     // ----- Private -----
     private String parseOptionalAuthHeader(ContainerRequestContext requestContext) {
@@ -264,5 +263,4 @@ public class AuthFilter implements ContainerRequestFilter {
             return String.format("Request {%s %s}", method, path);
         }
     }
-
 }

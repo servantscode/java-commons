@@ -1,15 +1,20 @@
 package org.servantscode.commons.rest;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.db.ConfigDB;
 import org.servantscode.commons.security.PermissionManager;
 import org.servantscode.commons.security.SCPrincipal;
 
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
+import java.util.concurrent.Callable;
 
 public class SCServiceBase {
+    private static Logger LOG = LogManager.getLogger(SCServiceBase.class);
 
     private ConfigDB configDB;
 
@@ -43,5 +48,27 @@ public class SCServiceBase {
 
     protected String getConfiguration(String config) {
         return configDB.getConfiguration(config);
+    }
+
+    public <T> T processRequest(Callable<T> r) {
+        try {
+            return r.call();
+        } catch(WebApplicationException t) {
+            throw t;
+        } catch(Throwable t) {
+            LOG.error("Call failed.", t);
+            throw new WebApplicationException("Call failed.", t);
+        }
+    }
+
+    public void processRequest(Runnable r) {
+        try {
+            r.run();
+        } catch(WebApplicationException t) {
+            throw t;
+        } catch(Throwable t) {
+            LOG.error("Call failed.", t);
+            throw new WebApplicationException("Call failed.", t);
+        }
     }
 }
