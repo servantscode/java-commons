@@ -71,6 +71,14 @@ public abstract class AbstractDBUpgrade extends DBAccess implements ServletConte
         }
     }
 
+    protected boolean tableIsEmpty(String table) throws SQLException {
+        try(Connection conn = getConnection();
+            PreparedStatement stmt = conn.prepareStatement("SELECT count(1) FROM " + table);
+            ResultSet rs = stmt.executeQuery()) {
+            return !rs.next() || rs.getInt(1) == 0;
+        }
+    }
+
     protected boolean runSql(String sql) throws SQLException {
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
