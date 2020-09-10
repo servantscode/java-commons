@@ -37,6 +37,11 @@ public abstract class ReportStreamingOutput implements StreamingOutput {
         this.timezone = DateUtils.getTimeZone();
     }
 
+    public ReportStreamingOutput(List<String> fields, ZoneId timezone) {
+        this.fields = fields;
+        this.timezone = timezone;
+    }
+
     // ----- Protected -----
     protected void writeCsv(OutputStream output, ResultSet rs) throws IOException {
         try {

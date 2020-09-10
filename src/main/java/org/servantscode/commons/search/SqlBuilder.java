@@ -55,18 +55,22 @@ public abstract class SqlBuilder {
 
     protected void fillStatement(PreparedStatement stmt, AtomicInteger pos) {
         values.forEach(value -> {
-            try {
-                if(value instanceof SqlBuilder)
-                    ((SqlBuilder) value).fillStatement(stmt, pos);
-                else
-                    stmt.setObject(pos.getAndIncrement(), sqlize(value));
-            } catch (SQLException e) {
-                throw new RuntimeException(String.format("Could not populate sql with value: %s at pos: %d\nsql: %s", value, pos.get() - 1, getSql()), e);
-            }
+            setValue(stmt, pos, value);
         });
     }
 
-    private Object sqlize(Object value) {
+    protected void setValue(PreparedStatement stmt, AtomicInteger pos, Object value) {
+        try {
+            if(value instanceof SqlBuilder)
+                ((SqlBuilder) value).fillStatement(stmt, pos);
+            else
+                stmt.setObject(pos.getAndIncrement(), sqlize(value));
+        } catch (SQLException e) {
+            throw new RuntimeException(String.format("Could not populate sql with value: %s at pos: %d\nsql: %s", value, pos.get() - 1, getSql()), e);
+        }
+    }
+
+    protected Object sqlize(Object value) {
         if(value instanceof LocalDate)
             return DBAccess.convert((LocalDate)value);
         if(value instanceof ZonedDateTime)

@@ -9,6 +9,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.servantscode.commons.security.OrganizationContext.isMultiTenant;
+
 public abstract class FilterableBuilder<T extends FilterableBuilder<T>> extends SqlBuilder {
     private static Logger LOG = LogManager.getLogger(FilterableBuilder.class);
 
@@ -116,15 +118,19 @@ public abstract class FilterableBuilder<T extends FilterableBuilder<T>> extends 
 
     public T inOrg(String field, int orgId) {
         startFiltering();
-        this.wheres.add(String.format("%s=?", field));
-        values.add(orgId);
+        if(isMultiTenant()) {
+            this.wheres.add(String.format("%s=?", field));
+            values.add(orgId);
+        }
         return (T)this;
     }
 
     public T inOrgOrSystem(String field, int orgId) {
         startFiltering();
-        this.wheres.add(String.format("(%s=? OR %s IS NULL)", field, field));
-        values.add(orgId);
+        if(isMultiTenant()) {
+            this.wheres.add(String.format("(%s=? OR %s IS NULL)", field, field));
+            values.add(orgId);
+        }
         return (T)this;
     }
 

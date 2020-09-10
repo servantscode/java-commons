@@ -69,6 +69,21 @@ public abstract class AbstractServiceClient {
         }
     }
 
+    public Response post(Object data, Map<String, Object>... params) {
+        try {
+//            data.forEach(this::translateDates);
+            return buildInvocation(params)
+                    .post(Entity.entity(data, MediaType.APPLICATION_JSON));
+        } catch (Throwable e) {
+            try {
+                System.err.println("Call failed: " + new ObjectMapper().writeValueAsString(data));
+            } catch (JsonProcessingException e1) {
+                System.err.println("Won't happen");
+            }
+            throw new RuntimeException("Call failed: ", e);
+        }
+    }
+
     public Response put(Map<String, Object> data, Map<String, Object>... params) {
         return put(null, data, params);
     }

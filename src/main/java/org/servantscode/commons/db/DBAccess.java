@@ -146,7 +146,6 @@ public class DBAccess {
         @Override
         public void close() throws SQLException {
             if(refCount.decrementAndGet() == 0) {
-                LOG.trace("Closing connection");
                 ic.close();
                 transactionalConnection = null;
             }
