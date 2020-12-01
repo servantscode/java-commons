@@ -4,6 +4,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.ReflectionUtils;
 import org.servantscode.commons.search.FieldTransformer.Transformation;
+import org.servantscode.commons.search.Search.CompoundClause;
+import org.servantscode.commons.search.Search.CompoundClause.ClauseType;
+import org.servantscode.commons.search.Search.SearchClause;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -15,6 +18,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.servantscode.commons.StringUtils.isEmpty;
@@ -26,6 +31,20 @@ public class SearchParser<T> {
     private final Class<T> clazz;
     private final String defaultField;
     private final FieldTransformer transformer;
+
+    private static class TestClass {
+        String name;
+
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+    }
+
+    public static void main(String[] args) {
+        SearchParser<TestClass> parser = new SearchParser<>(TestClass.class);
+        Search parsed = parser.parse("test test2");
+        System.out.println("Parsed: " + parsed.getSql());
+        System.out.println("Values: " + parsed.getValues().stream().map(Object::toString).collect(Collectors.joining(", ")));
+    }
 
     public SearchParser(Class<T> clazz) {
         this(clazz, "name", new FieldTransformer());
@@ -52,10 +71,68 @@ public class SearchParser<T> {
         LOG.trace("Parsing search string: " + searchString);
         String[] clauseStrings = parseText(searchString);
 
+        CompoundClause andClause = createOrClause(clauseStrings, new AtomicInteger(0));
+
         Search search = new Search();
-        Arrays.stream(clauseStrings).forEach(clause -> search.addClause(createClause(clause)));
+        search.addClause(andClause);
         return search;
     }
+
+    private CompoundClause createAndClause(String[] clauseStrings, AtomicInteger loc) {
+        CompoundClause andClause = new CompoundClause(ClauseType.AND);
+        boolean openParen = false;
+        while(loc.get() < clauseStrings.length) {
+            String clause = clauseStrings[loc.get()];
+            switch (clause) {
+                case "(":
+                    openParen = true;
+                    loc.incrementAndGet();
+                    andClause.addClause(createOrClause(clauseStrings, loc));
+                    break;
+                case ")":
+                    if(!openParen)
+                        return andClause;
+
+                    loc.incrementAndGet();
+                    return andClause;
+               case "OR":
+                    loc.incrementAndGet();
+                    return andClause;
+                case "AND":
+                    loc.incrementAndGet();
+                    break;
+                default:
+                    loc.incrementAndGet();
+                    andClause.addClause(createClause(clause));
+            }
+        }
+        return andClause;
+    }
+
+    private CompoundClause createOrClause(String[] clauseStrings, AtomicInteger loc) {
+        CompoundClause orClause = new CompoundClause(ClauseType.OR);
+        boolean openParen = false;
+        while(loc.get() < clauseStrings.length) {
+            String clause = clauseStrings[loc.get()];
+            switch (clause) {
+                case "(":
+                    openParen = true;
+                    loc.incrementAndGet();
+                    orClause.addClause(createOrClause(clauseStrings, loc));
+                    break;
+                case ")":
+                    if(!openParen)
+                        return orClause;
+
+                    loc.incrementAndGet();
+                    return orClause;
+                default:
+                    orClause.addClause(createAndClause(clauseStrings, loc));
+            }
+        }
+        return orClause;
+    }
+
 
     public String[] parseText(String searchString) {
         boolean quote=false;
@@ -67,12 +144,18 @@ public class SearchParser<T> {
         for(int i=0; i<chars.length; i++) {
             switch (chars[i]) {
                 case ' ':
+                case '(':
+                case ')':
                     if(quote || range)
                         break;
 
-                    String clause = new String(chars, start, i-start);
+                    String clause = new String(chars, start, i-start).trim();
                     if(isSet(clause))
                         clauses.add(clause);
+
+                    if(chars[i] != ' ')
+                        clauses.add(chars[i]+"");
+
                     start=i+1;
                     break;
                 case '\"':
@@ -109,7 +192,7 @@ public class SearchParser<T> {
         return clauses.toArray(new String[clauses.size()]);
     }
 
-    private Search.SearchClause createClause(String string) {
+    private SearchClause createClause(String string) {
 //        LOG.trace("Parsing clause: " + string);
         String[] searchBits = string.split(":", 2);
         String fieldName = searchBits.length > 1? searchBits[0]: defaultField;

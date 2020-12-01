@@ -137,10 +137,8 @@ public abstract class FilterableBuilder<T extends FilterableBuilder<T>> extends 
     public T search(Search search) {
         startFiltering();
         if(search != null) {
-            search.getClauses().forEach(clause -> {
-                this.wheres.add(clause.getSql());
-                this.values.addAll(clause.getValues());
-            });
+            this.wheres.add(search.getSql());
+            this.values.addAll(search.getValues());
         }
         return (T)this;
     }

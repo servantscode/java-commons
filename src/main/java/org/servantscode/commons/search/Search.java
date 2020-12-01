@@ -9,10 +9,14 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.joining;
 
 public class Search {
     private static final Logger LOG = LogManager.getLogger(Search.class);
@@ -28,8 +32,20 @@ public class Search {
         this.clauses = new ArrayList<>();
     }
 
+    public String getSql() {
+        return this.clauses.stream().map(SearchClause::getSql).collect(joining(" AND "));
+    }
+
+    public List<Object> getValues() {
+        return this.clauses.stream().flatMap(c -> c.getValues().stream()).collect(Collectors.toList());
+    }
+
     public void addClause(SearchClause clause) {
         this.clauses.add(clause);
+    }
+
+    public void addClauses(SearchClause... clauses) {
+        this.clauses.addAll(Arrays.asList(clauses));
     }
 
     public List<SearchClause> getClauses() {
@@ -282,7 +298,7 @@ public class Search {
 
         @Override
         public String getSql() {
-            return "(" + items.stream().map(item -> String.format("? = any(%s)", field)).collect(Collectors.joining(" OR ")) + ")";
+            return "(" + items.stream().map(item -> String.format("? = any(%s)", field)).collect(joining(" OR ")) + ")";
         }
 
         @Override
@@ -291,4 +307,39 @@ public class Search {
         }
     }
 
+    public static class CompoundClause extends SearchClause {
+        public enum ClauseType {AND, OR};
+
+        private ClauseType type;
+        private List<SearchClause> clauses = new LinkedList<>();
+
+        public CompoundClause(ClauseType type, SearchClause... clauses) {
+            this.type = type;
+            this.clauses.addAll(asList(clauses));
+        }
+
+        public void addClause(SearchClause clause) {
+            this.clauses.add(clause);
+        }
+
+        @Override
+        String getSql() {
+            if (clauses.size() == 0)
+                throw new IllegalStateException();
+
+            if (clauses.size() == 1)
+                return clauses.get(0).getSql();
+
+            String clauseJoin = " " + type.toString() + " ";
+            String clauseString = clauses.stream()
+                                    .map(SearchClause::getSql)
+                                    .collect(joining(clauseJoin));
+            return String.format("(%s)", clauseString);
+        }
+
+        @Override
+        List<Object> getValues() {
+            return clauses.stream().flatMap(c -> c.getValues().stream()).collect(Collectors.toList());
+        }
+    }
 }
