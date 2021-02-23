@@ -20,7 +20,9 @@ public class ResponseLoggingFilter implements ContainerResponseFilter {
                        ContainerResponseContext responseContext) {
 
 
-        if(requestContext.getMethod().equalsIgnoreCase("OPTIONS")) {
+        String path = ThreadContext.get("request.path");
+        if(requestContext.getMethod().equalsIgnoreCase("OPTIONS") ||
+           requestContext.getUriInfo().getPath().equals("ping")) {
             return;
         }
 

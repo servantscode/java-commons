@@ -110,13 +110,13 @@ public class AuthFilter implements ContainerRequestFilter {
             org = host.split("\\.")[0];
         }
 
-        if(isSet(org))
+        String uriPath = uri.getPath();
+        if(isSet(org) && !uriPath.equals("ping"))
             LOG.trace("enabling org: " + org);
 
         OrganizationContext.enableOrganization(org);
         ThreadContext.put("request.org", org);
 
-        String uriPath = uri.getPath();
         ThreadContext.put("request.received", Long.toString(System.currentTimeMillis()));
         ThreadContext.put("request.method", requestContext.getMethod());
         ThreadContext.put("request.path", uriPath);
@@ -135,7 +135,8 @@ public class AuthFilter implements ContainerRequestFilter {
 
 
         RequestType request = new RequestType(requestContext.getMethod().toUpperCase(), uriPath.toLowerCase());
-        LOG.trace("Authorizing request: " + request);
+        if(!uriPath.equals("ping"))
+            LOG.trace("Authorizing request: " + request);
 
         // No token required for login and password resets...
         // TODO: Is there a better way to do this with routing?

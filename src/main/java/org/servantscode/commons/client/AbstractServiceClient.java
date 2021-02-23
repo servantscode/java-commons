@@ -167,8 +167,15 @@ public abstract class AbstractServiceClient {
     protected Invocation.Builder buildInvocation(WebTarget target, Map<String, Object>... optionalParams) {
         if(optionalParams.length > 0) {
             Map<String, Object> params = optionalParams[0];
-            for(Map.Entry<String, Object> entry: params.entrySet())
-                target = target.queryParam(entry.getKey(), entry.getValue());
+            for(Map.Entry<String, Object> entry: params.entrySet()) {
+                if(entry.getValue() instanceof List) {
+                    String key = entry.getKey();
+                    for(Object value: (List)entry.getValue())
+                        target = target.queryParam(key, value);
+                } else {
+                    target = target.queryParam(entry.getKey(), entry.getValue());
+                }
+            }
         }
 
         String urlPrefix = getReferralUrl();

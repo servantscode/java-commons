@@ -200,11 +200,14 @@ public class SearchParser<T> {
 
         Transformation transformation = transformer.get(fieldName);
 
-        Class<?> fieldType = ReflectionUtils.getDeepFieldType(clazz, fieldName);
+        if(transformation.isCustom())
+            return new Search.CustomClause(transformation.getCustomSql(), transformation.transform(value));
+
+        Class<?> fieldType = transformation.getFieldType() != null? transformation.getFieldType(): ReflectionUtils.getDeepFieldType(clazz, fieldName);
         if(fieldType == null) {
             return new Search.GenericClause(transformation.fieldName(), transformation.transform(stripQuotes(value)));
         } else if(fieldType == String.class) {
-            return new Search.TextClause(transformation.fieldName(), stripQuotes(value));
+            return new Search.TextClause(transformation.fieldName(), (String) transformation.transform(stripQuotes(value)));
         } else if(fieldType.isEnum()) {
             return new Search.EnumClause(transformation.fieldName(), value);
         } else if(List.class.isAssignableFrom(fieldType)) {

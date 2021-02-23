@@ -97,6 +97,25 @@ public class Search {
         public List<Object> getValues() { return asList(value); }
     }
 
+    public static class CustomClause extends SearchClause {
+        private final String sql;
+        private final Object value;
+
+        public CustomClause(String sql, Object value) {
+            if (sql == null || value == null) {
+                throw new NullPointerException("Can't pass null value to clause");
+            }
+            this.sql = sql;
+            this.value = value;
+        }
+
+        @Override
+        public String getSql() { return sql; }
+
+        @Override
+        public List<Object> getValues() { return asList(value); }
+    }
+
     public static class EnumClause extends SearchClause {
         private final String field;
         private final String value;
