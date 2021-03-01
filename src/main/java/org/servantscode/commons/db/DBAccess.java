@@ -29,6 +29,7 @@ public class DBAccess {
 
     private static ConnectionFactory factory;
 
+    public static ConnectionFactory getConnectionFactory() { return factory; }
     public static void setConnectionFactory(ConnectionFactory f) {
         factory = f;
     }
