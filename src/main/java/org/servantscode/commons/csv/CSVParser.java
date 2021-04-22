@@ -16,13 +16,13 @@ public class CSVParser {
     private boolean hasHeaders;
 
     public CSVParser() {
-        this(1, 2);
+        this(0, 1);
     }
 
     public CSVParser(int headerRow, int firstDataRow) {
         this.headerRow = headerRow;
         this.firstDataRow = firstDataRow;
-        hasHeaders = headerRow>0;
+        hasHeaders = headerRow > -1;
     }
 
     public CSVData readFiles(List<File> importFiles) {
@@ -65,8 +65,10 @@ public class CSVParser {
             while(++lineNumber < headerRow)
                 fileLines.readLine();
 
-            if(hasHeaders)
+            if(hasHeaders) {
                 data.headers = fileLines.readLine();
+                processHeaders(data, data.headers);
+            }
 
             while(lineNumber < firstDataRow-1) {
                 System.out.println("Skipping row");
@@ -74,7 +76,6 @@ public class CSVParser {
                 lineNumber++;
             }
 
-            processHeaders(data, data.headers);
 
             String line = null;
             while((line = fileLines.readLine()) != null) {
@@ -130,7 +131,11 @@ public class CSVParser {
 
             if(isSet(fieldData)) {
                 entry.put(field, fieldData);
-                data.fieldCounts.get(field).incrementAndGet();
+                AtomicInteger count = data.fieldCounts.get(field);
+                if(count == null)
+                    data.fieldCounts.put(field, new AtomicInteger(1));
+                else
+                    count.incrementAndGet();
             }
         }
         return entry;
