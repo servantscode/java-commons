@@ -65,7 +65,7 @@ public class SearchParser<T> {
     }
 
     public Search parse(String searchString) {
-        if(isEmpty(searchString.trim()))
+        if(isEmpty(searchString))
             return null;
 
         LOG.trace("Parsing search string: " + searchString);
