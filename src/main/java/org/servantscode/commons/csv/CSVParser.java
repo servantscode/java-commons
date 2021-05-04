@@ -62,8 +62,9 @@ public class CSVParser {
     private void readStream(CSVData data, BufferedReader fileLines) {
         int lineNumber = 0;
         try {
-            while(++lineNumber < headerRow)
+            while(lineNumber++ < headerRow)
                 fileLines.readLine();
+
 
             if(hasHeaders) {
                 data.headers = fileLines.readLine();
@@ -90,6 +91,7 @@ public class CSVParser {
                         data.failedRows++;
                 } catch (Exception e) {
                     System.err.println("Failed to parse line " + lineNumber + ": " + e.getMessage());
+                    e.printStackTrace();
                     data.badLines.add(line);
                 }
             }
@@ -111,8 +113,10 @@ public class CSVParser {
         } else {
             for (String column : columns) {
                 String columnName = stripQuotes(column);
-                data.fields.add(columnName);
-                data.fieldCounts.put(columnName, new AtomicInteger());
+                if(isSet(columnName)) {
+                    data.fields.add(columnName);
+                    data.fieldCounts.put(columnName, new AtomicInteger());
+                }
             }
         }
     }
@@ -124,12 +128,13 @@ public class CSVParser {
 
         for(int i=0;i<parsedLine.length; i++) {
             String column = parsedLine[i];
-            if(data.fields.size() <= i)
-                data.fields.add("Column " + (i+1));
-            String field = data.fields.get(i);
             String fieldData = stripQuotes(column);
 
             if(isSet(fieldData)) {
+                if(data.fields.size() <= i)
+                    data.fields.add("Column " + (i+1));
+
+                String field = data.fields.get(i);
                 entry.put(field, fieldData);
                 AtomicInteger count = data.fieldCounts.get(field);
                 if(count == null)
