@@ -3,6 +3,7 @@ package org.servantscode.commons.search;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.ReflectionUtils;
+import org.servantscode.commons.StringUtils;
 import org.servantscode.commons.search.FieldTransformer.Transformation;
 import org.servantscode.commons.search.Search.CompoundClause;
 import org.servantscode.commons.search.Search.CompoundClause.ClauseType;
@@ -22,8 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
-import static org.servantscode.commons.StringUtils.isEmpty;
-import static org.servantscode.commons.StringUtils.isSet;
+import static org.servantscode.commons.StringUtils.*;
+import static org.servantscode.commons.search.Search.CompoundClause.ClauseType.OR;
 
 public class SearchParser<T> {
     private static final Logger LOG = LogManager.getLogger(SearchParser.class);
@@ -31,20 +32,6 @@ public class SearchParser<T> {
     private final Class<T> clazz;
     private final String defaultField;
     private final FieldTransformer transformer;
-
-    private static class TestClass {
-        String name;
-
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-    }
-
-    public static void main(String[] args) {
-        SearchParser<TestClass> parser = new SearchParser<>(TestClass.class);
-        Search parsed = parser.parse("test test2");
-        System.out.println("Parsed: " + parsed.getSql());
-        System.out.println("Values: " + parsed.getValues().stream().map(Object::toString).collect(Collectors.joining(", ")));
-    }
 
     public SearchParser(Class<T> clazz) {
         this(clazz, "name", new FieldTransformer());
@@ -71,46 +58,95 @@ public class SearchParser<T> {
         LOG.trace("Parsing search string: " + searchString);
         String[] clauseStrings = parseText(searchString);
 
-        CompoundClause andClause = createOrClause(clauseStrings, new AtomicInteger(0));
+        CompoundClause andClause = createCompoundClause(clauseStrings, new AtomicInteger(0));
 
         Search search = new Search();
         search.addClause(andClause);
         return search;
     }
 
-    private CompoundClause createAndClause(String[] clauseStrings, AtomicInteger loc) {
-        CompoundClause andClause = new CompoundClause(ClauseType.AND);
+    private CompoundClause createCompoundClause(String[] clauseStrings, AtomicInteger loc) {
+        CompoundClause clause = new CompoundClause();
+        ClauseType type = null;
         boolean openParen = false;
         while(loc.get() < clauseStrings.length) {
-            String clause = clauseStrings[loc.get()];
-            switch (clause) {
+            String token = clauseStrings[loc.get()];
+            switch (token) {
                 case "(":
                     openParen = true;
                     loc.incrementAndGet();
-                    andClause.addClause(createOrClause(clauseStrings, loc));
+                    clause.addClause(createCompoundClause(clauseStrings, loc));
+                    //Chew off close paren when clause complete
+                    if(loc.get() < clauseStrings.length && clauseStrings[loc.get()].equals(")"))
+                        loc.incrementAndGet();
                     break;
                 case ")":
-                    if(!openParen)
-                        return andClause;
+                    if(openParen)
+                        loc.incrementAndGet();
 
+                    return clause;
+                case "OR":
+                case "AND":
+                    ClauseType newType = ClauseType.valueOf(token);
+                    if(type == null) {
+                        type = newType;
+                        clause.setType(type);
+                        loc.incrementAndGet();
+                    } else if (type == newType) {
+                        loc.incrementAndGet();
+                    } else {
+                        if(newType == OR) {
+                            type = newType;
+                            clause.packageExistingAndChangeType(type);
+                        } else {
+                            //Rewind a step
+                            clause.replaceLastClause(createAndClause(clauseStrings, loc, clause.getLastClause()));
+                        }
+                    }
+
+                    break;
+                default:
                     loc.incrementAndGet();
-                    return andClause;
+                    clause.addClause(createClause(token));
+            }
+        }
+        return clause;
+    }
+
+    private CompoundClause createAndClause(String[] clauseStrings, AtomicInteger loc, SearchClause... clauses) {
+        CompoundClause clause = new CompoundClause(ClauseType.AND, clauses);
+        boolean openParen = false;
+        while(loc.get() < clauseStrings.length) {
+            String token = clauseStrings[loc.get()];
+            switch (token) {
+                case "(":
+                    openParen = true;
+                    loc.incrementAndGet();
+                    clause.addClause(createCompoundClause(clauseStrings, loc));
+                    //Chew off close paren when clause complete
+                    if(loc.get() < clauseStrings.length && clauseStrings[loc.get()].equals(")"))
+                        loc.incrementAndGet();
+                    break;
+                case ")":
+                    if(openParen)
+                        loc.incrementAndGet();
+
+                    return clause;
                case "OR":
-                    loc.incrementAndGet();
-                    return andClause;
+                    return clause;
                 case "AND":
                     loc.incrementAndGet();
                     break;
                 default:
                     loc.incrementAndGet();
-                    andClause.addClause(createClause(clause));
+                    clause.addClause(createClause(token));
             }
         }
-        return andClause;
+        return clause;
     }
 
     private CompoundClause createOrClause(String[] clauseStrings, AtomicInteger loc) {
-        CompoundClause orClause = new CompoundClause(ClauseType.OR);
+        CompoundClause orClause = new CompoundClause(OR);
         boolean openParen = false;
         while(loc.get() < clauseStrings.length) {
             String clause = clauseStrings[loc.get()];
@@ -211,7 +247,7 @@ public class SearchParser<T> {
         } else if(fieldType.isEnum()) {
             return new Search.EnumClause(transformation.fieldName(), value);
         } else if(List.class.isAssignableFrom(fieldType)) {
-            List<String> items = Arrays.stream(value.split("\\|")).map(this::stripQuotes).collect(toList());
+            List<String> items = Arrays.stream(value.split("\\|")).map(StringUtils::stripQuotes).collect(toList());
             return new Search.ListItemClause(transformation.fieldName(), items);
         } else if(fieldType == boolean.class || fieldType == Boolean.class) {
             return new Search.BooleanClause(transformation.fieldName(), Boolean.parseBoolean(value));
@@ -242,14 +278,6 @@ public class SearchParser<T> {
         } else {
             throw new IllegalArgumentException(String.format("Can't figure out what to do with field %s (type: %s)", fieldName, fieldType.getSimpleName()));
         }
-    }
-
-    private String stripQuotes(String value) {
-        if (value.startsWith("\""))
-            value = value.substring(1);
-        if (value.endsWith("\""))
-            value = value.substring(0, value.length() - 1);
-        return value;
     }
 
     private Number parseNumber(String number) {

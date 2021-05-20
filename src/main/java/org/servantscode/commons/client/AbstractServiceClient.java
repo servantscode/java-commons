@@ -3,6 +3,7 @@ package org.servantscode.commons.client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.jersey.client.ClientConfig;
+import org.servantscode.commons.rest.ObjectMapperContextResolver;
 
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.MediaType;
@@ -27,7 +28,7 @@ public abstract class AbstractServiceClient {
     public abstract Map<String, String> getAdditionalHeaders();
 
     protected AbstractServiceClient(String baseUrl) {
-        client = ClientBuilder.newClient(new ClientConfig().register(this.getClass()));
+        client = ClientBuilder.newClient(new ClientConfig().register(this.getClass()).register(ObjectMapperContextResolver.class));
         webTarget = client.target(baseUrl);
     }
 

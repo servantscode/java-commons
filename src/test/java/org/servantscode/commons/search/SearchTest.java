@@ -173,6 +173,7 @@ public class SearchTest {
         clause = new Search.TimeRangeClause(null, null, null);
     }
 
+    @Test
     public void testTimeRangeClauseStartNull() {
         LocalDate dateOne = LocalDate.of(0, 2, 1);
         LocalTime timeOne = LocalTime.of(0, 0, 0, 0);
@@ -182,6 +183,7 @@ public class SearchTest {
         assertEquals("Wrong Values", "[0001-02-01 00:00:00.0]", clause.getValues().toString());
     }
 
+    @Test
     public void testTimeRangeClauseEndNull() {
         LocalDate dateOne = LocalDate.of(0, 2, 1);
         LocalTime timeOne = LocalTime.of(0, 0, 0, 0);

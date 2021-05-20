@@ -170,10 +170,7 @@ public class Search {
 
         @Override
         public String getSql() {
-            String query = (startValue != null)? String.format("%s >= ?", field): "";
-            query += (startValue != null && endValue != null)? " AND ": "";
-            query +=  (endValue != null)? String.format("%s <= ?", field): "";
-            return query;
+            return rangeQuery(field, startValue != null, endValue != null);
         }
 
         @Override
@@ -218,7 +215,9 @@ public class Search {
         }
 
         @Override
-        public String getSql() { return String.format("%s > ? AND %s < ?", field, field); }
+        public String getSql() {
+            return rangeQuery(field, true, true);
+        }
 
         @Override
         public List<Object> getValues() { return asList(value, value.plusDays(1)); }
@@ -240,10 +239,7 @@ public class Search {
 
         @Override
         public String getSql() {
-            String query = (start != null)? String.format("%s >= ?", field): "";
-            query += (start != null && end != null)? " AND ": "";
-            query +=  (end != null)? String.format("%s <= ?", field): "";
-            return query;
+            return rangeQuery(field, start != null, end != null);
         }
 
         @Override
@@ -275,10 +271,7 @@ public class Search {
 
         @Override
         public String getSql() {
-            String query = (start != null)? String.format("%s > ?", field): "";
-            query += (start != null && end != null)? " AND ": "";
-            query +=  (end != null)? String.format("%s < ?", field): "";
-            return query;
+            return rangeQuery(field, start != null, end != null);
         }
 
         @Override
@@ -329,16 +322,39 @@ public class Search {
     public static class CompoundClause extends SearchClause {
         public enum ClauseType {AND, OR};
 
-        private ClauseType type;
+        private ClauseType type = ClauseType.AND;
         private List<SearchClause> clauses = new LinkedList<>();
+
+        public CompoundClause(SearchClause... clauses) {
+            this.clauses.addAll(asList(clauses));
+        }
 
         public CompoundClause(ClauseType type, SearchClause... clauses) {
             this.type = type;
             this.clauses.addAll(asList(clauses));
         }
 
+        public void setType(ClauseType type) {
+            this.type = type;
+        }
+
         public void addClause(SearchClause clause) {
             this.clauses.add(clause);
+        }
+
+        public void packageExistingAndChangeType(ClauseType type) {
+            CompoundClause sub = new CompoundClause(this.type, this.clauses.toArray(new SearchClause[this.clauses.size()]));
+            this.clauses.clear();
+            this.clauses.add(sub);
+            this.type = type;
+        }
+
+        public SearchClause getLastClause() {
+            return clauses.get(clauses.size()-1);
+        }
+
+        public void replaceLastClause(SearchClause clause) {
+            clauses.set(clauses.size()-1, clause);
         }
 
         @Override
@@ -360,5 +376,20 @@ public class Search {
         List<Object> getValues() {
             return clauses.stream().flatMap(c -> c.getValues().stream()).collect(Collectors.toList());
         }
+    }
+
+    private static String rangeQuery(String field, boolean start, boolean end) {
+        StringBuilder query = new StringBuilder();
+        if(start && end)
+            query.append("(");
+        if(start)
+            query.append(String.format("%s >= ?", field));
+        if(start && end)
+            query.append(" AND ");
+        if(end)
+            query.append(String.format("%s <= ?", field));
+        if(start && end)
+            query.append(")");
+        return query.toString();
     }
 }
