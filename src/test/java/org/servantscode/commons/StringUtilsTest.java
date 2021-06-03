@@ -22,7 +22,7 @@ public class StringUtilsTest {
 
     @Test
     public void isEmptyTestSingleSpaceString() {
-        assertFalse("Incorrect boolean", StringUtils.isEmpty(" "));
+        assertTrue("Incorrect boolean", StringUtils.isEmpty(" "));
     }
 
     @Test
@@ -47,7 +47,7 @@ public class StringUtilsTest {
 
     @Test
     public void isSetTestSingleSpaceString() {
-        assertTrue("Incorrect boolean", StringUtils.isSet(" "));
+        assertFalse("Incorrect boolean", StringUtils.isSet(" "));
     }
 
     @Test

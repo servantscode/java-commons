@@ -86,7 +86,7 @@ public class SearchTest {
     public void testIntegerRangeClauseExtreme() {
         Search.SearchClause clause;
         clause = new Search.NumberRangeClause("field", Integer.MIN_VALUE, Integer.MAX_VALUE);
-        assertEquals("Wrong SQL.", "field >= ? AND field <= ?", clause.getSql());
+        assertEquals("Wrong SQL.", "(field >= ? AND field <= ?)", clause.getSql());
         assertEquals("Wrong Values", "[-2147483648, 2147483647]", clause.getValues().toString());
     }
 
@@ -96,7 +96,7 @@ public class SearchTest {
         for (int i = -100; i < 101; i += 100) {
             for (int j = -100; j < 101; j += 100) {
                 clause = new Search.NumberRangeClause("field", i, j);
-                assertEquals("Wrong SQL.", "field >= ? AND field <= ?", clause.getSql());
+                assertEquals("Wrong SQL.", "(field >= ? AND field <= ?)", clause.getSql());
                 assertEquals("Wrong Values", "[" + i + ", " + j + "]", clause.getValues().toString());
             }
         }
@@ -124,7 +124,7 @@ public class SearchTest {
         LocalDate local = LocalDate.of(-500, 1, 1);
         while (local.isBefore(LocalDate.of(2500, 12, 31))) {
             clause = new Search.DateClause("field", local);
-            assertEquals("Wrong SQL.", "field > ? AND field < ?", clause.getSql());
+            assertEquals("Wrong SQL.", "(field >= ? AND field <= ?)", clause.getSql());
             assertEquals("Wrong Values", String.format("[%s, %s]",
                     local,
                     local.plusDays(1)),
@@ -144,7 +144,7 @@ public class SearchTest {
             second = LocalDate.of(2000, 1, 1);
             while (second.isBefore(LocalDate.of(2030, 1, 1))) {
                 clause = new Search.DateRangeClause("field", first, second);
-                assertEquals("Wrong SQL.", "field >= ? AND field <= ?", clause.getSql());
+                assertEquals("Wrong SQL.", "(field >= ? AND field <= ?)", clause.getSql());
                 assertEquals("Wrong Values", String.format("[%s, %s]",
                         first,
                         second),
@@ -163,7 +163,7 @@ public class SearchTest {
 
         Search.TimeRangeClause clause;
         clause = new Search.TimeRangeClause("field", zd, zd);
-        assertEquals("Wrong SQL.", "field > ? AND field < ?", clause.getSql());
+        assertEquals("Wrong SQL.", "(field >= ? AND field <= ?)", clause.getSql());
         assertEquals("Wrong Values", "[0001-02-01 00:00:00.0, 0001-02-01 00:00:00.0]", clause.getValues().toString());
     }
 
@@ -179,7 +179,7 @@ public class SearchTest {
         LocalTime timeOne = LocalTime.of(0, 0, 0, 0);
         ZonedDateTime zd = ZonedDateTime.of(dateOne, timeOne, ZoneId.of("GMT"));
         Search.TimeRangeClause clause = new Search.TimeRangeClause("field", null, zd);
-        assertEquals("Wrong SQL.", "field < ?", clause.getSql());
+        assertEquals("Wrong SQL.", "field <= ?", clause.getSql());
         assertEquals("Wrong Values", "[0001-02-01 00:00:00.0]", clause.getValues().toString());
     }
 
@@ -189,7 +189,7 @@ public class SearchTest {
         LocalTime timeOne = LocalTime.of(0, 0, 0, 0);
         ZonedDateTime zd = ZonedDateTime.of(dateOne, timeOne, ZoneId.of("GMT"));
         Search.TimeRangeClause clause = new Search.TimeRangeClause("field", zd, null);
-        assertEquals("Wrong SQL.", "field > ?", clause.getSql());
+        assertEquals("Wrong SQL.", "field >= ?", clause.getSql());
         assertEquals("Wrong Values", "[0001-02-01 00:00:00.0]", clause.getValues().toString());
     }
 
@@ -216,7 +216,7 @@ public class SearchTest {
                     ZonedDateTime one = ZonedDateTime.of(LocalDateTime.of(dateOne, timeOne), idOne);
                     ZonedDateTime two = ZonedDateTime.of(LocalDateTime.of(dateTwo, timeTwo), idTwo);
                     clause = new Search.TimeRangeClause("field", one, two);
-                    assertEquals("Wrong SQL.", "field > ? AND field < ?", clause.getSql());
+                    assertEquals("Wrong SQL.", "(field >= ? AND field <= ?)", clause.getSql());
                     assertEquals("Wrong Values", String.format("[%s, %s]",
                             Timestamp.valueOf(one.withZoneSameInstant(ZoneId.of("Z")).toLocalDateTime()),
                             Timestamp.valueOf(two.withZoneSameInstant(ZoneId.of("Z")).toLocalDateTime())),
