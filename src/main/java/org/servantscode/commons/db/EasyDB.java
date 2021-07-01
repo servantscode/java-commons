@@ -18,7 +18,7 @@ public abstract class EasyDB<T> extends DBAccess {
 
     protected SearchParser<T> searchParser;
 
-    private boolean logSql = false;
+    protected static boolean logSql = false;
 
     public EasyDB(Class<T> clazz, String defaultField)  {
         this(clazz, defaultField, Collections.emptyMap());
@@ -32,13 +32,12 @@ public abstract class EasyDB<T> extends DBAccess {
         this.searchParser = new SearchParser<>(clazz, defaultField, transformer);
     }
 
-    protected void setLogSql(boolean logSql) { this.logSql = logSql; }
+    protected void setLogSql(boolean logSql) { EasyDB.logSql = logSql; }
 
     protected int getCount(QueryBuilder query) {
-        if(logSql) LOG.trace("Executing: " + query.getSql());
         try (Connection conn = getConnection();
              PreparedStatement stmt = query.prepareStatement(conn);
-             ResultSet rs = stmt.executeQuery()) {
+             ResultSet rs = runQuery(query, stmt)) {
 
             if (rs.next())
                 return rs.getInt(1);
@@ -50,37 +49,18 @@ public abstract class EasyDB<T> extends DBAccess {
     }
 
     protected List<T> get(QueryBuilder query) {
-        if(logSql) LOG.trace("Executing: " + query.getSql());
-        try ( Connection conn = getConnection();
-              PreparedStatement stmt = query.prepareStatement(conn)
-        ) {
-            return processResults(stmt);
-        } catch (SQLException e) {
-            LOG.error("SQL failed: " + query.getSql());
-            throw new RuntimeException("Could not retrieve items.", e);
-        }
+        return processResults(query);
     }
 
     protected T getOne(QueryBuilder query) {
-        if(logSql) LOG.trace("Executing: " + query.getSql());
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = query.prepareStatement(conn);
-        ) {
-
-            return firstOrNull(processResults(stmt));
-        } catch (SQLException e) {
-            LOG.error("SQL failed: " + query.getSql());
-            throw new RuntimeException("Could not retrieve item.", e);
-        }
+        return firstOrNull(processResults(query));
     }
 
     //Requires a count search
     protected boolean existsAny(QueryBuilder query) {
-        if(logSql) LOG.trace("Executing: " + query.getSql());
         try (Connection conn = getConnection();
              PreparedStatement stmt = query.prepareStatement(conn);
-             ResultSet rs = stmt.executeQuery();
-        ) {
+             ResultSet rs = runQuery(query, stmt)) {
 
             return rs.next() && rs.getInt(1) > 0;
         } catch (SQLException e) {
@@ -90,11 +70,10 @@ public abstract class EasyDB<T> extends DBAccess {
     }
 
     protected boolean create(InsertBuilder cmd) {
-        if(logSql) LOG.trace("Executing: " + cmd.getSql());
         try (Connection conn = getConnection();
              PreparedStatement stmt = cmd.prepareStatement(conn)) {
 
-            return stmt.executeUpdate() > 0;
+            return runUpdate(cmd, stmt) > 0;
         } catch (SQLException e) {
             LOG.error("SQL failed: " + cmd.getSql());
             throw new RuntimeException("Could not create record.", e);
@@ -102,11 +81,10 @@ public abstract class EasyDB<T> extends DBAccess {
     }
 
     protected int createAndReturnKey(InsertBuilder cmd) {
-        if(logSql) LOG.trace("Executing: " + cmd.getSql());
         try (Connection conn = getConnection();
              PreparedStatement stmt = cmd.prepareStatement(conn, true)) {
 
-            if(stmt.executeUpdate() == 0)
+            if(runUpdate(cmd, stmt) == 0)
                 throw new RuntimeException("Could not create record.");
 
             try (ResultSet rs = stmt.getGeneratedKeys()) {
@@ -122,11 +100,10 @@ public abstract class EasyDB<T> extends DBAccess {
     }
 
     protected long createAndReturnLongKey(InsertBuilder cmd) {
-        if(logSql) LOG.trace("Executing: " + cmd.getSql());
         try (Connection conn = getConnection();
              PreparedStatement stmt = cmd.prepareStatement(conn, true)) {
 
-            if(stmt.executeUpdate() == 0)
+            if(runUpdate(cmd, stmt) == 0)
                 throw new RuntimeException("Could not create record.");
 
             try (ResultSet rs = stmt.getGeneratedKeys()) {
@@ -142,11 +119,10 @@ public abstract class EasyDB<T> extends DBAccess {
     }
 
     protected boolean update(UpdateBuilder cmd) {
-        if(logSql) LOG.trace("Executing: " + cmd.getSql());
         try (Connection conn = getConnection();
              PreparedStatement stmt = cmd.prepareStatement(conn)) {
 
-            return stmt.executeUpdate() > 0;
+            return runUpdate(cmd, stmt) > 0;
         } catch (SQLException e) {
             LOG.error("SQL failed: " + cmd.getSql());
             throw new RuntimeException("Could not update record.", e);
@@ -158,7 +134,7 @@ public abstract class EasyDB<T> extends DBAccess {
         try (Connection conn = getConnection();
              PreparedStatement stmt = cmd.prepareStatement(conn)) {
 
-            return stmt.executeUpdate() > 0;
+            return runUpdate(cmd, stmt) > 0;
         } catch (SQLException e) {
             LOG.error("SQL failed: " + cmd.getSql());
             throw new RuntimeException("Could not delete record.", e);
@@ -170,20 +146,51 @@ public abstract class EasyDB<T> extends DBAccess {
         try (Connection conn = getConnection();
              PreparedStatement stmt = cmd.prepareStatement(conn)) {
 
-            return stmt.executeUpdate() > 0;
+            return runUpdate(cmd, stmt) > 0;
         } catch (SQLException e) {
             LOG.error("SQL failed: " + cmd.getSql());
             throw new RuntimeException("Could not run command.", e);
         }
     }
 
-    protected List<T> processResults(PreparedStatement stmt) throws SQLException {
-        try(ResultSet rs = stmt.executeQuery()) {
+    protected List<T> processResults(QueryBuilder query) {
+        try ( Connection conn = getConnection();
+              PreparedStatement stmt = query.prepareStatement(conn);
+              ResultSet rs = runQuery(query, stmt)) {
+
             List<T> sessions = new LinkedList<>();
             while (rs.next())
                 sessions.add(processRow(rs));
             return sessions;
+        } catch (SQLException e) {
+            LOG.error("SQL failed: " + query.getSql());
+            throw new RuntimeException("Could not retrieve items.", e);
         }
+    }
+
+    protected int runUpdate(SqlBuilder cmd, PreparedStatement stmt) throws SQLException {
+        if(logSql) LOG.trace("Executing: " + cmd.getSql());
+        long start = System.currentTimeMillis();
+        int changes = stmt.executeUpdate();
+        long rt = System.currentTimeMillis() - start;
+        if (logSql)
+            LOG.trace("Completed in : " + rt + " msecs.");
+        else if (rt > 1000)
+            LOG.trace("Executed: " + cmd.getSql() + " in " + rt + " msecs.");
+        return changes;
+    }
+
+    protected ResultSet runQuery(QueryBuilder query, PreparedStatement stmt) throws SQLException {
+        if(logSql) LOG.trace("Executing: " + query.getSql());
+        long start = System.currentTimeMillis();
+        ResultSet rs = stmt.executeQuery();
+        long rt = System.currentTimeMillis() - start;
+        if (logSql)
+            LOG.trace("Completed in : " + rt + " msecs.");
+        else if (rt > 1000)
+            LOG.trace("Executed: " + query.getSql() + " in " + rt + " msecs.");
+
+        return rs;
     }
 
     protected abstract T processRow(ResultSet r) throws SQLException;

@@ -161,7 +161,7 @@ public class AuthFilter implements ContainerRequestFilter {
                 throw new NotAuthorizedException("Not Authorized");
         }
 
-        SESSION_VERIFIER.verifySession(callingIp, token, user);
+        SESSION_VERIFIER.verifySession(callingIp, token, jwt);
 
         enableRole(jwt);
         SecurityContext context = createContext(requestContext.getUriInfo(), jwt);

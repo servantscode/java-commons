@@ -1,5 +1,6 @@
 package org.servantscode.commons.rest;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.Session;
@@ -14,8 +15,8 @@ public class DefaultSessionVerifier implements SessionVerifier {
     private static Logger LOG = LogManager.getLogger(DefaultSessionVerifier.class);
     private SessionDB db = new SessionDB();
 
-    public boolean verifySession(String callingIp, String token, String user) {
-        if(!user.equals(SYSTEM)) {
+    public boolean verifySession(String callingIp, String token, DecodedJWT jwt) {
+        if(!SYSTEM.equals(jwt.getSubject())) {
             Session activeSession = db.getSessionByToken(token);
             if (activeSession == null || activeSession.getExpiration().isBefore(ZonedDateTime.now())) {
                 throw new NotAuthorizedException("Not Authorized");
