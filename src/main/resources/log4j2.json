@@ -17,7 +17,7 @@
         {
           "type": "Console",
           "name": "STDOUT",
-          "PatternLayout": { "pattern": "%m%n" },
+          "PatternLayout": { "pattern": "%d{DEFAULT} - %m%n" },
           "ThresholdFilter": { "level": "trace" }
         },
         {
