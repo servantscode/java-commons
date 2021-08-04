@@ -1,5 +1,8 @@
 package org.servantscode.commons;
 
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
+
 public class StringUtils {
     public static boolean isEmpty(String s) {
         return s == null || s.trim().isEmpty();
@@ -17,5 +20,13 @@ public class StringUtils {
         if (value.endsWith("\""))
             value = value.substring(0, value.length() - 1);
         return value;
+    }
+
+    public static String stripAllTags(String input) {
+        return isSet(input)? Jsoup.clean(input, Safelist.none()): input;
+    }
+
+    public static String stripUnsafeTags(String input) {
+        return isSet(input)? Jsoup.clean(input, Safelist.relaxed()): input;
     }
 }
