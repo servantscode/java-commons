@@ -1,6 +1,8 @@
 plugins {
     id 'java'
     id 'maven'
+    id 'java-library'
+    id 'maven-publish'
 }
 
 group 'org.servantscode'
@@ -25,4 +27,19 @@ dependencies {
     compile group: 'org.postgresql', name: 'postgresql', version: '42.2.5'
     compile group: 'com.zaxxer', name: 'HikariCP', version: '2.7.8'
     testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+publishing {
+    publications {
+        java_commons(MavenPublication) {
+            from components.java
+        }
+    }
+
+    repositories {
+        maven {
+            name = 'java-commons'
+            url = layout.buildDirectory.dir("home/runner/.m2/repository/org/servantscode/java-commons/1.0/java-commons-1.0.jar")
+        }
+    }
 }
