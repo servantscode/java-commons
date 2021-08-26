@@ -38,8 +38,12 @@ publishing {
 
     repositories {
         maven {
-            name = 'java-commons'
-            url = layout.buildDirectory.dir("home/runner/.m2/repository/org/servantscode/java-commons/1.0/java-commons-1.0.jar")
+            name = "java-commons"
+            url = "https://maven.pkg.github.com/servantscode/java-commons"
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
         }
     }
 }
