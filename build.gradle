@@ -32,8 +32,8 @@ dependencies {
 publishing {
     publications {
         maven(MavenPublication) {
-            groupId = 'org.servantscode.java-commons'
-            artifactId = 'library'
+            groupId = 'org.servantscode'
+            artifactId = 'java-commons'
             version = '1.0'
             from components.java
         }
