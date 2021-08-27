@@ -35,5 +35,5 @@ jobs:
       run: |
           NEW_VERSION=$(echo "${GITHUB_REF}" | cut -d "/" -f3)
           echo "Github username: ${GITHUB_ACTOR}"
-          echo "Github token: ${secrets.GITHUB_TOKEN}"
+          echo "Github token: ${GITHUB_TOKEN}"
           ./gradlew publish
