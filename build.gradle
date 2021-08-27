@@ -42,7 +42,7 @@ publishing {
     }
     
     publications {
-        javaCommons(MavenPublication) {
+        peekaboo(MavenPublication) {
             from(components.java)
         }
     }
