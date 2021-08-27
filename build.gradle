@@ -37,7 +37,7 @@ publishing {
     }
 
     repositories {
-        maven {
+        javaCommons {
             name = "GitHubPackages"
             url = "https://maven.pkg.github.com/servantscode/java-commons"
             credentials {
