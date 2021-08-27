@@ -31,9 +31,10 @@ jobs:
     # the publishing section of your build.gradle
     - name: Publish to GitHub Packages
       env:
-        GITHUB_TOKEN: "Hello There!"
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
           NEW_VERSION=$(echo "${GITHUB_REF}" | cut -d "/" -f3)
+          FOO=$GITHUB_TOKEN
           echo "Github username: ${GITHUB_ACTOR}"
-          echo "Github token: ${GITHUB_TOKEN}"
+          echo "Github token: ${FOO}"
           ./gradlew publish
