@@ -32,4 +32,8 @@ jobs:
     - name: Publish to GitHub Packages
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: ./gradlew publish --stacktrace
+      run: |
+          NEW_VERSION=$(echo "${GITHUB_REF}" | cut -d "/" -f3)
+          echo "Github username: ${GITHUB_ACTOR}"
+          echo "Github token: ${secrets.GITHUB_TOKEN}"
+          ./gradlew publish
