@@ -37,8 +37,8 @@ publishing {
     }
 
     repositories {
-        java-commons {
-            name = "GitHubPackages"
+        maven {
+            name = "java-commons"
             url = "https://maven.pkg.github.com/servantscode/java-commons"
             credentials {
                 username = System.getenv("GITHUB_ACTOR")
