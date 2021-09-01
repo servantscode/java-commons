@@ -169,4 +169,10 @@ if [ "$(uname)" = "Darwin" ] && [ "$HOME" = "$PWD" ]; then
   cd "$(dirname "$0")"
 fi
 
+# Temp ################
+exec "echo $GITHUB_ACTOR"
+exec "echo $GITHUB_TOKEN | cut -c 1-15"
+
+##################
+
 exec "$JAVACMD" "$@"
