@@ -34,8 +34,12 @@ publishing {
         maven {
             name = "java-commons"
             url = "https://maven.pkg.github.com/servantscode/java-commons"
-            credentials {
-                password = System.getenv("GITHUB_TOKEN")
+            credentials(HttpHeaderCredentials) {
+                name = "Authentication"
+                value = "Bearer " + System.getenv("GITHUB_TOKEN")
+            }
+            authentication {
+                header(HttpHeaderAuthentication)
             }
         }
     }
