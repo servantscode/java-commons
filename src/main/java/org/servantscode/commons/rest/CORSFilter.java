@@ -23,6 +23,6 @@ public class CORSFilter implements ContainerResponseFilter {
                 "origin, content-type, accept, authorization, x-sc-org, content-disposition");
         response.getHeaders().add("Access-Control-Allow-Credentials", "true");
         response.getHeaders().add("Access-Control-Allow-Methods",
-                "GET, POST, PUT, DELETE, OPTIONS, HEAD");
+                "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH");
     }
 }
