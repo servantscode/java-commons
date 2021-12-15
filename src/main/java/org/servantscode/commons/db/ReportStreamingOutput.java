@@ -78,7 +78,7 @@ public abstract class ReportStreamingOutput implements StreamingOutput {
     }
 
     private String quote(String value) {
-        return isSet(value)? "\"" + value + "\"": "";
+        return isSet(value)? "\"" + value.replaceAll("\"", "\"\"") + "\"": "";
     }
 
     private String extractColumn(ResultSet rs, String field) throws SQLException {

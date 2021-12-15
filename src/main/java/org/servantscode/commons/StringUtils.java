@@ -12,6 +12,10 @@ public class StringUtils {
         return s != null && !s.trim().isEmpty();
     }
 
+    public static String trim(String s) {
+        return s == null? s: s.trim();
+    }
+
     public static boolean areEqual(String s1, String s2) { return (s1 == null)? s2 == null: s1.equals(s2); }
 
     public static String stripQuotes(String value) {
