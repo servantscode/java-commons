@@ -168,6 +168,9 @@ public abstract class AbstractServiceClient {
 
     // ----- Protected -----
     protected void translateDates(Map<String, Object> data) {
+        if(data == null)
+            return;
+
         data.entrySet().forEach( (entry) -> {
             Object obj = entry.getValue();
             if(obj instanceof ZonedDateTime) {
