@@ -1,11 +1,14 @@
 package org.servantscode.commons;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static java.util.Arrays.stream;
 
 public class ReflectionUtils {
     public static Class<?> getDeepFieldType(Class<?> clazz, String fieldName) {
@@ -37,6 +40,13 @@ public class ReflectionUtils {
         }
     }
 
+    public static <T> Field getField(Method m) {
+        String fieldName = getFieldName(m);
+        return stream(m.getDeclaringClass().getDeclaredFields())
+                .filter(f -> f.getName().equals(fieldName))
+                .findFirst().orElse(null);
+    }
+
     // Find accessors
     public static Method getGetter(Class<?> clazz, String fieldName) {
         List<Method> methods = filterMethods(clazz, m -> isGetter(m) && getFieldName(m).equals(fieldName));
@@ -57,7 +67,7 @@ public class ReflectionUtils {
     }
 
     public static List<Method> filterMethods(Class<?> clazz, Predicate<Method> pred) {
-        return Arrays.stream(clazz.getMethods()).filter(pred).collect(Collectors.toList());
+        return stream(clazz.getMethods()).filter(pred).collect(Collectors.toList());
     }
 
     public static boolean isSetter(Method m) {
