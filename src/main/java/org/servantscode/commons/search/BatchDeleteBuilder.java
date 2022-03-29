@@ -2,85 +2,88 @@ package org.servantscode.commons.search;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.servantscode.commons.security.OrganizationContext;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class BatchInsertBuilder<T extends Object> extends SqlBuilder {
-    private static Logger LOG = LogManager.getLogger(QueryBuilder.class);
+public class BatchDeleteBuilder<T extends Object> extends FilterableBuilder<BatchDeleteBuilder<T>> {
+    private static Logger LOG = LogManager.getLogger(BatchDeleteBuilder.class);
 
-    private enum BuilderState {START, INTO, VALUES, BATCHES, DONE };
+    private enum BuilderState { START, TABLE, VALUES, WHERE, BATCHES, DONE };
 
     private String table = null;
-    private List<String> fields = new LinkedList<>();
     private List<Function<T, ? extends Object>> valueSource = new LinkedList<>();
     private List<T> batches = new LinkedList<>();
 
     private BuilderState state = BuilderState.START;
 
-    public BatchInsertBuilder() {}
+    public BatchDeleteBuilder() {}
 
-    public BatchInsertBuilder<T> into(String table) {
-        setState(BuilderState.INTO);
+    public BatchDeleteBuilder<T> deleteFrom(String table) {
+        setState(BuilderState.TABLE);
         this.table = table;
         return this;
     }
 
-    public BatchInsertBuilder<T> value(String field, Object value) {
-        setState(BuilderState.VALUES);
-        this.fields.add(field);
-        this.values.add(value);
+    public BatchDeleteBuilder<T> with(String field, Object value) {
+        startFiltering();
+        if(value == null) {
+            this.wheres.add(field + " IS NULL");
+        } else {
+            this.wheres.add(field + "=?");
+            values.add(value);
+        }
         return this;
     }
 
-    public BatchInsertBuilder<T> valueSource(String field, Function<T, ? extends Object> source) {
-        setState(BuilderState.VALUES);
-        this.fields.add(field);
+    public BatchDeleteBuilder<T> withSource(String field, Function<T, ? extends Object> source) {
+        setState(BatchDeleteBuilder.BuilderState.WHERE);
+        this.wheres.add(field + "=?");
         this.valueSource.add(source);
         return this;
     }
 
-    public BatchInsertBuilder<T> inOrg() {
-        setState(BuilderState.VALUES);
-        this.fields.add("org_id");
-        this.values.add(OrganizationContext.orgId());
-        return this;
-    }
 
-    public BatchInsertBuilder<T> inOrg(String field) {
-        setState(BuilderState.VALUES);
-        this.fields.add(field);
-        this.values.add(OrganizationContext.orgId());
-        return this;
-    }
-
-    public BatchInsertBuilder<T> addBatch(T batch) {
-        setState(BuilderState.BATCHES);
+    public BatchDeleteBuilder<T> addBatch(T batch) {
+        setState(BatchDeleteBuilder.BuilderState.BATCHES);
         this.batches.add(batch);
         return this;
     }
 
-    public BatchInsertBuilder<T> addBatches(List<T> batches) {
-        setState(BuilderState.BATCHES);
+    public BatchDeleteBuilder<T> addBatches(List<T> batches) {
+        setState(BatchDeleteBuilder.BuilderState.BATCHES);
         this.batches.addAll(batches);
         return this;
     }
 
     @Override
+    protected void startFiltering() {
+        setState(BuilderState.WHERE);
+    }
+
+    @Override
     public String getSql() {
         setState(BuilderState.DONE);
+        if(!wheres.isEmpty() && !ors.isEmpty()) {
+            ors.add(wheres);
+            wheres = Collections.emptyList();
+        }
+
         StringBuilder sql = new StringBuilder();
-        sql.append("INSERT INTO ").append(table);
-        sql.append(" (").append(String.join(", ", fields)).append(") ");
-        sql.append(" VALUES (").append(fields.stream().map(f -> "?").collect(Collectors.joining(", "))).append(")");
+        sql.append("DELETE FROM ").append(table);
+        if(!ors.isEmpty())
+            sql.append(" WHERE (")
+               .append(ors.stream().map(wheres -> String.join(" AND ", wheres)).collect(Collectors.joining(") OR (")))
+               .append(")");
+         if(!wheres.isEmpty())
+            sql.append(" WHERE ").append(String.join(" AND ", wheres));
+
         return sql.toString();
     }
 
