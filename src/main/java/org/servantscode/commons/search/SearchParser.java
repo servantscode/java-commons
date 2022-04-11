@@ -15,19 +15,20 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.servantscode.commons.StringUtils.*;
 import static org.servantscode.commons.search.Search.CompoundClause.ClauseType.OR;
 
 public class SearchParser<T> {
     private static final Logger LOG = LogManager.getLogger(SearchParser.class);
+    public static final String DESC = "DESC";
+    public static final String ASC = "ASC";
 
     private final Class<T> clazz;
     private final String defaultField;
@@ -63,6 +64,26 @@ public class SearchParser<T> {
         Search search = new Search();
         search.addClause(andClause);
         return search;
+    }
+
+
+    public String translateSort(String sortString) {
+        if(isEmpty(sortString))
+            return sortString;
+
+        List<String> sortFields = asList(sortString.split(","));
+        String updatedSort = sortFields.stream()
+                .map(field -> {
+                    String[] sortCmd = sortString.trim().split(" ");
+                    String sortOrder = sortCmd.length == 1? ASC: sortCmd[1].toUpperCase();
+
+                    if(!DESC.equals(sortOrder) && !ASC.equals(sortOrder))
+                        throw new RuntimeException("Invalid sort order specified: " + sortCmd[1]);
+
+                    return transformer.transformFieldName(sortCmd[0]) + " " + sortOrder;
+                }).collect(joining(", "));
+        LOG.debug("Sort translated to: " + updatedSort);
+        return updatedSort;
     }
 
     private CompoundClause createCompoundClause(String[] clauseStrings, AtomicInteger loc) {
