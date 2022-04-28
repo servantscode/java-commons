@@ -8,6 +8,7 @@ import java.security.Principal;
 
 public class SCPrincipal implements Principal {
 
+    public static final String SYSTEM = "SYSTEM";
     private final DecodedJWT jwt;
 
     public SCPrincipal(DecodedJWT jwt) {
@@ -20,6 +21,14 @@ public class SCPrincipal implements Principal {
             return false;
 
         return getUserId() == ((SCPrincipal)another).getUserId();
+    }
+
+    public boolean isSystem() {
+        return SYSTEM.equals(jwt.getSubject());
+    }
+
+    public String getSubject() {
+        return jwt.getSubject();
     }
 
     public int getUserId() {
