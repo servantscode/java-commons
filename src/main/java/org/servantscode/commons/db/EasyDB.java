@@ -194,4 +194,12 @@ public abstract class EasyDB<T> extends DBAccess {
     }
 
     protected abstract T processRow(ResultSet r) throws SQLException;
+
+    protected Search parse(String search) {
+        return searchParser.parse(search);
+    }
+
+    protected String translate(String sort) {
+        return searchParser.translateSort(sort);
+    }
 }
