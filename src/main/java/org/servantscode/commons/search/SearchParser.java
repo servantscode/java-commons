@@ -74,7 +74,7 @@ public class SearchParser<T> {
         List<String> sortFields = asList(sortString.split(","));
         String updatedSort = sortFields.stream()
                 .map(field -> {
-                    String[] sortCmd = sortString.trim().split(" ");
+                    String[] sortCmd = field.trim().split(" ");
                     String sortOrder = sortCmd.length == 1? ASC: sortCmd[1].toUpperCase();
 
                     if(!DESC.equals(sortOrder) && !ASC.equals(sortOrder))
