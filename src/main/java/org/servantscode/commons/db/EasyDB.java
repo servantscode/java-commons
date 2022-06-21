@@ -4,10 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.search.*;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -201,5 +198,18 @@ public abstract class EasyDB<T> extends DBAccess {
 
     protected String translate(String sort) {
         return searchParser.translateSort(sort);
+    }
+
+    protected boolean hasColumn(ResultSet rs, String columnName) throws SQLException {
+        ResultSetMetaData rsmd = rs.getMetaData();
+        int columns = rsmd.getColumnCount();
+
+        for(int x = 1; x <= columns; ++x) {
+            if (columnName.equals(rsmd.getColumnName(x))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
