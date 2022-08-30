@@ -86,6 +86,14 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
         return this;
     }
 
+
+    public QueryBuilder innerJoin(String join, Object... values) {
+        setState(BuilderState.JOIN);
+        this.joins.add("INNER JOIN " + join);
+        this.values.addAll(Arrays.asList(values));
+        return this;
+    }
+
     public QueryBuilder innerJoin(QueryBuilder query, String alias, String joinOn) {
         this.setState(BuilderState.JOIN);
         this.joins.add(String.format("INNER JOIN (%s) %s ON %s", query.getSql(), alias, joinOn));

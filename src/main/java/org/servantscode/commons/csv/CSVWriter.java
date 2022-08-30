@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.servantscode.commons.StringUtils.isEmpty;
 
 public class CSVWriter extends Writer {
 
@@ -33,7 +34,7 @@ public class CSVWriter extends Writer {
 
     public void write(List<String> row) throws IOException {
         String rowData = row.stream()
-                .map(d -> "\"" + d.replaceAll("\"", "\"\"") + "\"")
+                .map(d -> isEmpty(d)? "": "\"" + d.replaceAll("\"", "\"\"") + "\"")
                 .collect(Collectors.joining(",")) + "\r\n";
         output.write(rowData.getBytes(UTF_8));
     }
