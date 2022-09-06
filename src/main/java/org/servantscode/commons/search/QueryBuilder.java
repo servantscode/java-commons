@@ -86,7 +86,6 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
         return this;
     }
 
-
     public QueryBuilder innerJoin(String join, Object... values) {
         setState(BuilderState.JOIN);
         this.joins.add("INNER JOIN " + join);
