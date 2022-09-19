@@ -1,8 +1,13 @@
 package org.servantscode.commons;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.Ref;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
@@ -11,6 +16,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.stream;
 
 public class ReflectionUtils {
+    private static final Logger LOG = LogManager.getLogger(ReflectionUtils.class);
     public static Class<?> getDeepFieldType(Class<?> clazz, String fieldName) {
         String[] fieldPath = fieldName.split("\\.");
 
@@ -79,11 +85,26 @@ public class ReflectionUtils {
     }
 
     public static String getFieldName(Method m) {
+        JsonProperty methodAnnotation = m.getAnnotation(JsonProperty.class);
+        if(methodAnnotation != null) {
+            String annotatedFieldName = methodAnnotation.value();
+            LOG.debug("ReflectionUtils calculated field name: " + annotatedFieldName + " from method annotation: " + m.getName());
+            return annotatedFieldName;
+        }
+
         String methodName = m.getName();
         if(!methodName.startsWith("get") && !methodName.startsWith("set") && !methodName.startsWith("is"))
             throw new IllegalArgumentException("Method provided is not an accessor: " + methodName);
 
         String fieldName = methodName.startsWith("is") ? methodName.substring(2) : methodName.substring(3);
-        return fieldName.substring(0, 1).toLowerCase() + fieldName.substring(1);
+        fieldName = fieldName.substring(0, 1).toLowerCase() + fieldName.substring(1);
+
+        JsonProperty fieldAnnotation = null;
+        try {
+            Field field = m.getDeclaringClass().getDeclaredField(fieldName);
+            fieldAnnotation = field.getAnnotation(JsonProperty.class);
+        } catch (NoSuchFieldException e) { /* If no field, just move on. */}
+
+        return fieldAnnotation != null? fieldAnnotation.value(): fieldName;
     }
 }

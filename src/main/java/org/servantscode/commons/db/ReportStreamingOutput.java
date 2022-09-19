@@ -127,6 +127,6 @@ public abstract class ReportStreamingOutput implements StreamingOutput {
         if(zdt == null)
             return null;
 
-        return zdt.withZoneSameInstant(timezone).format(DateTimeFormatter.ofPattern("YYYY-mm-dd hh:mm a"));
+        return zdt.withZoneSameInstant(timezone).format(DateTimeFormatter.ofPattern("YYYY-MM-dd hh:mm a"));
     }
 }
