@@ -3,8 +3,10 @@ package org.servantscode.commons.client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.HttpUrlConnectorProvider;
 import org.servantscode.commons.rest.ObjectMapperContextResolver;
 
+import javax.ws.rs.PATCH;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -28,7 +30,8 @@ public abstract class AbstractServiceClient {
     public abstract Map<String, String> getAdditionalHeaders();
 
     protected AbstractServiceClient(String baseUrl) {
-        client = ClientBuilder.newClient(new ClientConfig().register(this.getClass()).register(ObjectMapperContextResolver.class));
+        client = ClientBuilder.newClient(new ClientConfig().register(this.getClass()).register(ObjectMapperContextResolver.class))
+                    .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true);
         webTarget = client.target(baseUrl);
     }
 
@@ -153,6 +156,43 @@ public abstract class AbstractServiceClient {
             throw new RuntimeException("Call failed: ", e);
         }
     }
+
+    public Response put(String path, Object data, Map<String, Object>... params) {
+        try {
+            if(isEmpty(path))
+                return buildInvocation(params)
+                        .put(Entity.entity(data, MediaType.APPLICATION_JSON));
+            else
+                return buildInvocation(path, params)
+                        .put(Entity.entity(data, MediaType.APPLICATION_JSON));
+        } catch (Throwable e) {
+            try {
+                System.err.println("Call failed: " + new ObjectMapper().writeValueAsString(data));
+            } catch (JsonProcessingException e1) {
+                System.err.println("Won't happen");
+            }
+            throw new RuntimeException("Call failed: ", e);
+        }
+    }
+
+    public Response patch(String path, Object data, Map<String, Object>... params) {
+        try {
+            if(isEmpty(path))
+                return buildInvocation(params)
+                        .method("PATCH", Entity.entity(data, MediaType.APPLICATION_JSON));
+            else
+                return buildInvocation(path, params)
+                        .method("PATCH", Entity.entity(data, MediaType.APPLICATION_JSON));
+        } catch (Throwable e) {
+            try {
+                System.err.println("Call failed: " + new ObjectMapper().writeValueAsString(data));
+            } catch (JsonProcessingException e1) {
+                System.err.println("Won't happen");
+            }
+            throw new RuntimeException("Call failed: ", e);
+        }
+    }
+
 
     public Response get(Map<String, Object>... params) {
         return buildInvocation(params).get();
