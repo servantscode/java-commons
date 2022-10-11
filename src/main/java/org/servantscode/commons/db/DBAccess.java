@@ -63,6 +63,7 @@ public class DBAccess {
     }
 
     protected static QueryBuilder select(String... selections) { return new QueryBuilder().select(selections); }
+    protected static QueryBuilder selectDistinct(String... selections) { return new QueryBuilder().distinct().select(selections); }
     protected static QueryBuilder selectAll() { return new QueryBuilder().select("*"); }
     protected static QueryBuilder count() { return new QueryBuilder().select("count(1)"); }
     protected static InsertBuilder insertInto(String table) { return new InsertBuilder().into(table); }

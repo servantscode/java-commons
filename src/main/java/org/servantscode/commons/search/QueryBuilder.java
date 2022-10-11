@@ -34,6 +34,7 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
     private String sort;
     private boolean limit;
     private boolean offset;
+    private boolean distinct;
 
     private BuilderState state = BuilderState.START;
 
@@ -43,6 +44,12 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
     public QueryBuilder select(String... selections) {
         setState(BuilderState.SELECT);
         this.selections.addAll(asList(selections));
+        return this;
+    }
+
+    public QueryBuilder distinct() {
+        setState(BuilderState.SELECT);
+        distinct = true;
         return this;
     }
 
@@ -162,7 +169,10 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
         }
 
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT ").append(String.join(", ", selections));
+        sql.append("SELECT ");
+        if(distinct)
+            sql.append("DISTINCT ");
+        sql.append(String.join(", ", selections));
         sql.append(" FROM ").append(String.join(", ", tables));
         if(!joins.isEmpty())
             sql.append(" ").append(String.join(" ", joins));
