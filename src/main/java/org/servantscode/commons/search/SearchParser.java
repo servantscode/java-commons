@@ -311,9 +311,9 @@ public class SearchParser<T> {
 
     private LocalDate parseDate(String bit) { return bit.equals("*")? null: LocalDate.parse(bit); }
 
-    private ZonedDateTime parseTime(String bit) { return parseTime(bit, false); }
+    private static ZonedDateTime parseTime(String bit) { return parseTime(bit, false); }
 
-    private ZonedDateTime parseTime(String bit, boolean endOfDayOption) {
+    private static ZonedDateTime parseTime(String bit, boolean endOfDayOption) {
         if(bit.equals("*")) return null;
 
         ZonedDateTime zdt = parseZonedDateTime(bit);
@@ -327,7 +327,7 @@ public class SearchParser<T> {
         return LocalDate.parse(bit).plusDays(endOfDayOption? 1:0).atStartOfDay(ZoneId.systemDefault()).minusNanos(1);
     }
 
-    private ZonedDateTime parseZonedDateTime(String bit) {
+    private static ZonedDateTime parseZonedDateTime(String bit) {
         try {
             return ZonedDateTime.parse(bit);
         } catch (Exception e) {
@@ -335,7 +335,7 @@ public class SearchParser<T> {
         }
     }
 
-    private LocalDateTime parseLocalDateTime(String bit) {
+    private static LocalDateTime parseLocalDateTime(String bit) {
         try {
             return LocalDateTime.parse(bit);
         } catch (Exception e) {
