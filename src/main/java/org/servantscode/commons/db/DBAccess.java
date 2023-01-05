@@ -74,7 +74,7 @@ public class DBAccess {
 
     public static Timestamp convert(ZonedDateTime input) {
         //Translate zone to UTC then save
-        return input != null? Timestamp.valueOf(input.withZoneSameInstant(ZoneId.of("Z")).toLocalDateTime()): null;
+        return input != null? Timestamp.from(input.withZoneSameInstant(ZoneId.of("Z")).toInstant()): null;
     }
 
     public static ZonedDateTime convert(Timestamp input) {

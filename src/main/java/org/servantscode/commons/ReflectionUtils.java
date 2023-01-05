@@ -1,15 +1,19 @@
 package org.servantscode.commons;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.ws.rs.BadRequestException;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Ref;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -106,5 +110,27 @@ public class ReflectionUtils {
         } catch (NoSuchFieldException e) { /* If no field, just move on. */}
 
         return fieldAnnotation != null? fieldAnnotation.value(): fieldName;
+    }
+
+    public static <T> void patchObject(Class<T> clazz, T existing, Map<String, Object> data) {
+        T updates;
+        try {
+            ObjectMapper mapper = ObjectMapperFactory.getMapper();
+            updates = mapper.readValue(mapper.writeValueAsString(data), clazz);
+        } catch (IOException e) {
+            throw new RuntimeException("Unamppable data provided: " + data, e);
+        }
+
+        data.keySet().forEach(key -> {
+            try {
+                Method getter = getGetter(clazz, key);
+                Object value = getter.invoke(updates);
+
+                Method setter = getSetter(clazz, key);
+                setter.invoke(existing, value);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException("Failed to update field: " + key, e);
+            }
+        });
     }
 }
