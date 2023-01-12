@@ -15,8 +15,6 @@ public abstract class EasyDB<T> extends DBAccess {
 
     protected SearchParser<T> searchParser;
 
-    protected static boolean logSql = false;
-
     public EasyDB(Class<T> clazz, String defaultField)  {
         this(clazz, defaultField, Collections.emptyMap());
     }
@@ -28,8 +26,6 @@ public abstract class EasyDB<T> extends DBAccess {
     public EasyDB(Class<T> clazz, String defaultField, FieldTransformer transformer)  {
         this.searchParser = new SearchParser<>(clazz, defaultField, transformer);
     }
-
-    protected void setLogSql(boolean logSql) { EasyDB.logSql = logSql; }
 
     protected int getCount(QueryBuilder query) {
         try (Connection conn = getConnection();
@@ -163,31 +159,6 @@ public abstract class EasyDB<T> extends DBAccess {
             LOG.error("SQL failed: " + query.getSql());
             throw new RuntimeException("Could not retrieve items.", e);
         }
-    }
-
-    protected int runUpdate(SqlBuilder cmd, PreparedStatement stmt) throws SQLException {
-        if(logSql) LOG.trace("Executing: " + cmd.getSql());
-        long start = System.currentTimeMillis();
-        int changes = stmt.executeUpdate();
-        long rt = System.currentTimeMillis() - start;
-        if (logSql)
-            LOG.trace("Completed in : " + rt + " msecs.");
-        else if (rt > 1000)
-            LOG.trace("Executed: " + cmd.getSql() + " in " + rt + " msecs.");
-        return changes;
-    }
-
-    protected ResultSet runQuery(QueryBuilder query, PreparedStatement stmt) throws SQLException {
-        if(logSql) LOG.trace("Executing: " + query.getSql());
-        long start = System.currentTimeMillis();
-        ResultSet rs = stmt.executeQuery();
-        long rt = System.currentTimeMillis() - start;
-        if (logSql)
-            LOG.trace("Completed in : " + rt + " msecs.");
-        else if (rt > 1000)
-            LOG.trace("Executed: " + query.getSql() + " in " + rt + " msecs.");
-
-        return rs;
     }
 
     protected abstract T processRow(ResultSet r) throws SQLException;

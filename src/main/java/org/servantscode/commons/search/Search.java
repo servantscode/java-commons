@@ -2,6 +2,8 @@ package org.servantscode.commons.search;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.servantscode.commons.db.DBAccess;
+import org.servantscode.commons.db.DBAccess.DBType;
 
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -20,8 +22,6 @@ import static java.util.stream.Collectors.joining;
 
 public class Search {
     private static final Logger LOG = LogManager.getLogger(Search.class);
-
-    public enum DBType {POSTGRES, MYSQL};
 
     private static DBType type = DBType.POSTGRES;
     public static void setDBType(DBType newType) { type = newType; }

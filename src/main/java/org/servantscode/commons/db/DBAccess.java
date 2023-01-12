@@ -2,10 +2,8 @@ package org.servantscode.commons.db;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.servantscode.commons.search.DeleteBuilder;
-import org.servantscode.commons.search.InsertBuilder;
-import org.servantscode.commons.search.QueryBuilder;
-import org.servantscode.commons.search.UpdateBuilder;
+import org.servantscode.commons.EnvProperty;
+import org.servantscode.commons.search.*;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -23,9 +21,16 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static org.servantscode.commons.StringUtils.isEmpty;
+import static org.servantscode.commons.db.DBAccess.DBType.POSTGRES;
+import static org.servantscode.commons.db.DBAccess.DBType.valueOf;
 
 public class DBAccess {
-    private static Logger LOG = LogManager.getLogger(DBAccess.class);
+    private static final Logger LOG = LogManager.getLogger(DBAccess.class);
+
+    public enum DBType {POSTGRES, MYSQL};
+
+    protected static boolean logSql = false;
+    protected void setLogSql(boolean logSql) { EasyDB.logSql = logSql; }
 
     private static ConnectionFactory factory;
 
@@ -58,8 +63,41 @@ public class DBAccess {
     }
 
     private static synchronized void defaultFactory() {
-        if(factory == null)
-            factory = new PostgresConnectionFactory();
+        if(factory == null) {
+            DBType type = valueOf(EnvProperty.get("DB_TYPE", POSTGRES.toString()));
+            switch(type) {
+                case POSTGRES:
+                    factory = new PostgresConnectionFactory();
+                    break;
+                default:
+                    throw new RuntimeException("Unknown database type encountered.");
+            }
+        }
+    }
+
+    protected int runUpdate(SqlBuilder cmd, PreparedStatement stmt) throws SQLException {
+        if(logSql) LOG.trace("Executing: " + cmd.getSql());
+        long start = System.currentTimeMillis();
+        int changes = stmt.executeUpdate();
+        long rt = System.currentTimeMillis() - start;
+        if (logSql)
+            LOG.trace("Completed in : " + rt + " msecs.");
+        else if (rt > 999)
+            LOG.trace("Executed: " + cmd.getSql() + " in " + rt + " msecs.");
+        return changes;
+    }
+
+    protected ResultSet runQuery(QueryBuilder query, PreparedStatement stmt) throws SQLException {
+        if(logSql) LOG.trace("Executing: " + query.getSql());
+        long start = System.currentTimeMillis();
+        ResultSet rs = stmt.executeQuery();
+        long rt = System.currentTimeMillis() - start;
+        if (logSql)
+            LOG.trace("Completed in : " + rt + " msecs.");
+        else if (rt > 999)
+            LOG.trace("Executed: " + query.getSql() + " in " + rt + " msecs.");
+
+        return rs;
     }
 
     protected static QueryBuilder select(String... selections) { return new QueryBuilder().select(selections); }

@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.db.DBAccess;
 
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -63,6 +64,8 @@ public abstract class SqlBuilder {
         try {
             if(value instanceof SqlBuilder)
                 ((SqlBuilder) value).fillStatement(stmt, pos);
+            else if(value instanceof InputStream)
+                stmt.setBinaryStream(pos.getAndIncrement(), (InputStream) value);
             else
                 stmt.setObject(pos.getAndIncrement(), sqlize(value));
         } catch (SQLException e) {
