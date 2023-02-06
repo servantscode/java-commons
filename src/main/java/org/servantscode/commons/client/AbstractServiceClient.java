@@ -10,6 +10,8 @@ import javax.ws.rs.PATCH;
 import javax.ws.rs.client.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.net.URI;
+import java.net.URL;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -33,6 +35,10 @@ public abstract class AbstractServiceClient {
         client = ClientBuilder.newClient(new ClientConfig().register(this.getClass()).register(ObjectMapperContextResolver.class))
                     .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true);
         webTarget = client.target(baseUrl);
+    }
+
+    public URI getUri() {
+        return webTarget.getUri();
     }
 
     public Response post(Map<String, Object> data, Map<String, Object>... params) {
