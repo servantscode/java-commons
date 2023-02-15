@@ -1,10 +1,7 @@
 package org.servantscode.commons.search;
 
-
 import org.junit.Test;
-
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
