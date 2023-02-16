@@ -212,6 +212,9 @@ public abstract class AbstractServiceClient {
         return buildInvocation("/" + id, params).delete();
     }
 
+    public Response delete(String path, Map<String, Object>... params) {
+        return buildInvocation(path, params).delete();
+    }
     // ----- Protected -----
     protected void translateDates(Map<String, Object> data) {
         if(data == null)
