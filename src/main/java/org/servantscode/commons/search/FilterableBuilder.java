@@ -17,6 +17,8 @@ public abstract class FilterableBuilder<T extends FilterableBuilder<T>> extends 
     protected List<List<String>> ors = new LinkedList<>();
     protected List<String> wheres = new LinkedList<>();
 
+    protected SearchParser<?> searchParser = null;
+
     protected abstract void startFiltering();
 
     public FilterableBuilder() {}
@@ -132,6 +134,18 @@ public abstract class FilterableBuilder<T extends FilterableBuilder<T>> extends 
             values.add(orgId);
         }
         return (T)this;
+    }
+
+    public T setSearchParser(SearchParser<?> searchParser) {
+        this.searchParser = searchParser;
+        return (T)this;
+    }
+
+    public T search(String search) {
+        if(this.searchParser == null)
+            throw new IllegalStateException("Search parser not configured");
+
+        return this.search(searchParser.parse(search));
     }
 
     public T search(Search search) {

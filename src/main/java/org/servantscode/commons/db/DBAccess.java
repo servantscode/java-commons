@@ -100,13 +100,15 @@ public class DBAccess {
         return rs;
     }
 
-    protected static QueryBuilder select(String... selections) { return new QueryBuilder().select(selections); }
-    protected static QueryBuilder selectDistinct(String... selections) { return new QueryBuilder().distinct().select(selections); }
-    protected static QueryBuilder selectAll() { return new QueryBuilder().select("*"); }
-    protected static QueryBuilder count() { return new QueryBuilder().select("count(1)"); }
-    protected static InsertBuilder insertInto(String table) { return new InsertBuilder().into(table); }
-    protected static UpdateBuilder update(String table) { return new UpdateBuilder().update(table); }
-    protected static DeleteBuilder deleteFrom(String table) { return new DeleteBuilder().delete(table); }
+    protected QueryBuilder select(String... selections) { return new QueryBuilder().select(selections); }
+    protected QueryBuilder select(List<String> selections) { return new QueryBuilder().select(selections); }
+    protected QueryBuilder selectDistinct(String... selections) { return new QueryBuilder().distinct().select(selections); }
+    protected QueryBuilder selectAll() { return new QueryBuilder().select("*"); }
+    protected QueryBuilder count() { return new QueryBuilder().select("count(1)"); }
+    protected QueryBuilder selectCount() { return new QueryBuilder().select("count(1)"); }
+    protected InsertBuilder insertInto(String table) { return new InsertBuilder().into(table); }
+    protected UpdateBuilder update(String table) { return new UpdateBuilder().update(table); }
+    protected DeleteBuilder deleteFrom(String table) { return new DeleteBuilder().delete(table); }
 
     protected static <T> T firstOrNull(List<T> items) { return items.isEmpty()? null: items.get(0); }
 

@@ -2,20 +2,12 @@ package org.servantscode.commons.search;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.servantscode.commons.Organization;
-import org.servantscode.commons.db.DBAccess;
-import org.servantscode.commons.security.OrganizationContext;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -41,9 +33,14 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
     public QueryBuilder() {
     }
 
+
     public QueryBuilder select(String... selections) {
+        return select(asList(selections));
+    }
+
+    public QueryBuilder select(List<String> selections) {
         setState(BuilderState.SELECT);
-        this.selections.addAll(asList(selections));
+        this.selections.addAll(selections);
         return this;
     }
 
@@ -66,11 +63,20 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
         return this;
     }
 
+    public QueryBuilder from(Function<QueryBuilder, QueryBuilder> tableSelector) {
+        setState(BuilderState.FROM);
+        return tableSelector.apply(this);
+    }
+
     public QueryBuilder from(QueryBuilder query, String alias) {
         setState(BuilderState.FROM);
         this.tables.add(String.format("(%s) %s", query.getSql(), alias));
         this.values.add(query);
         return this;
+    }
+
+    public QueryBuilder apply(Function<QueryBuilder, QueryBuilder> queryModifier) {
+        return queryModifier.apply(this);
     }
 
     public QueryBuilder join(String... joins) {
@@ -138,7 +144,7 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
 
     public QueryBuilder sort(String sort) {
         setState(BuilderState.SORT);
-        this.sort = sort;
+        this.sort = (searchParser != null)? searchParser.translateSort(sort): sort;
         return this;
     }
 
