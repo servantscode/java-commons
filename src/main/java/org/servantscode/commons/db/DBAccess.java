@@ -103,6 +103,7 @@ public class DBAccess {
     protected QueryBuilder select(String... selections) { return new QueryBuilder().select(selections); }
     protected QueryBuilder select(List<String> selections) { return new QueryBuilder().select(selections); }
     protected QueryBuilder selectDistinct(String... selections) { return new QueryBuilder().distinct().select(selections); }
+    protected QueryBuilder selectDistinct(List<String> selections) { return new QueryBuilder().distinct().select(selections); }
     protected QueryBuilder selectAll() { return new QueryBuilder().select("*"); }
     protected QueryBuilder count() { return new QueryBuilder().select("count(1)"); }
     protected QueryBuilder selectCount() { return new QueryBuilder().select("count(1)"); }

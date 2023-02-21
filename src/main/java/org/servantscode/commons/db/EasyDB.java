@@ -28,7 +28,7 @@ public abstract class EasyDB<T> extends DBAccess {
     }
 
     public QueryBuilder select(List<String> fields) { return super.select(fields).setSearchParser(searchParser); }
-    protected QueryBuilder selectDistinct(String... selections) { return super.selectDistinct(selections).setSearchParser(searchParser); }
+    protected QueryBuilder selectDistinct(List<String> selections) { return super.selectDistinct(selections).setSearchParser(searchParser); }
     protected QueryBuilder selectAll() { return super.selectAll().setSearchParser(searchParser); }
     protected QueryBuilder selectCount() { return super.selectCount().setSearchParser(searchParser); }
     protected UpdateBuilder update(String table) { return super.update(table).setSearchParser(searchParser); }
