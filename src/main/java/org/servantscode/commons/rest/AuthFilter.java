@@ -98,7 +98,6 @@ public class AuthFilter implements ContainerRequestFilter {
             ThreadContext.put("transaction.id", UUID.randomUUID().toString());
 
         String token = retrieveTokenHeader(requestContext);
-
         DecodedJWT jwt = TOKEN_PARSER.parseToken(token);
 
         AUTHORIZATION_POLICY.applyPolicy(requestContext, jwt);
@@ -106,8 +105,7 @@ public class AuthFilter implements ContainerRequestFilter {
         if(jwt != null) {
             SESSION_VERIFIER.verifySession(callingIp, token, jwt);
 
-            String user = getUserName(jwt);
-            ThreadContext.put("user", user);
+            ThreadContext.put("user", jwt.getSubject());
 
             if (OrganizationContext.isMultiTenant()) {
                 Organization activeOrg = OrganizationContext.getOrganization();
@@ -119,7 +117,6 @@ public class AuthFilter implements ContainerRequestFilter {
             requestContext.setSecurityContext(new SCSecurityContext(requestContext.getUriInfo(), jwt));
         }
     }
-
 
     // ----- Private -----
     private String retrieveTokenHeader(ContainerRequestContext requestContext) {
@@ -143,18 +140,6 @@ public class AuthFilter implements ContainerRequestFilter {
             String[] userPerms = claim.asArray(String.class);
             PermissionManager.enablePermissions(userPerms);
         }
-    }
-
-    private int getUserId(DecodedJWT jwt) {
-        Claim claim = jwt.getClaim("userId");
-        if(claim == null)
-            throw new NotAuthorizedException("Token does not have a userId");
-
-        return claim.asInt();
-    }
-
-    private String getUserName(DecodedJWT jwt) {
-        return jwt.getSubject();
     }
 
     private String getOrg(DecodedJWT jwt) {

@@ -19,7 +19,6 @@ public class DefaultAuthorizationPolicy implements AuthorizationPolicy {
     private static final List<RequestType> OPTIONAL_TOKEN_PATHS = new LinkedList<>();
 
     private static final List<RequestType> OPEN_PATHS = new LinkedList<>();
-    public static final String ANY = "*";
 
     static {
         OPTIONAL_TOKEN_PATHS.addAll(asList(new RequestType("password"),

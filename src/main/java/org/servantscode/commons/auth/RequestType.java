@@ -1,8 +1,9 @@
 package org.servantscode.commons.auth;
 
-import org.servantscode.commons.rest.AuthFilter;
-
 public class RequestType {
+
+    public static final String ANY = "*";
+
     private final String method;
     private final String path;
     private final boolean partial;
