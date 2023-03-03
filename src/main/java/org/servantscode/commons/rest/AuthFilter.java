@@ -33,18 +33,20 @@ public class AuthFilter implements ContainerRequestFilter {
 
     @Deprecated
     public static void registerOptionalTokenApi(String method, String path, boolean includeSubPaths) {
-        if(AUTHORIZATION_POLICY instanceof DefaultAuthorizationPolicy)
-            ((DefaultAuthorizationPolicy)AUTHORIZATION_POLICY).registerOptionalTokenApi(method, path, includeSubPaths);
+        if(AUTHORIZATION_POLICY instanceof PathAuthorizationPolicy)
+            ((PathAuthorizationPolicy)AUTHORIZATION_POLICY).registerOptionalTokenApi(method, path, includeSubPaths);
     }
 
     @Deprecated
     public static void registerPublicApi(String method, String path, boolean includeSubPaths) {
-        ((DefaultAuthorizationPolicy)AUTHORIZATION_POLICY).registerPublicApi(method, path, includeSubPaths);
+        if(AUTHORIZATION_POLICY instanceof PathAuthorizationPolicy)
+            ((PathAuthorizationPolicy)AUTHORIZATION_POLICY).registerPublicApi(method, path, includeSubPaths);
     }
 
     @Deprecated
     public static void registerPublicService(String path) {
-        ((DefaultAuthorizationPolicy)AUTHORIZATION_POLICY).registerPublicService(path);
+        if(AUTHORIZATION_POLICY instanceof PathAuthorizationPolicy)
+            ((PathAuthorizationPolicy)AUTHORIZATION_POLICY).registerPublicService(path);
     }
 
     private static SessionVerifier SESSION_VERIFIER = new DefaultSessionVerifier();
