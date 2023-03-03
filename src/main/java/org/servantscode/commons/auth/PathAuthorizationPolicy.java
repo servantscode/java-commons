@@ -25,7 +25,7 @@ public class PathAuthorizationPolicy implements AuthorizationPolicy {
         String uriPath = uri.getPath();
 
         RequestType request = new RequestType(requestContext.getMethod().toUpperCase(), uriPath.toLowerCase());
-        if (jwt == null && (!OPEN_PATHS.contains(request) && !OPTIONAL_TOKEN_PATHS.contains(request)))
+        if (jwt == null && !OPEN_PATHS.contains(request) && !OPTIONAL_TOKEN_PATHS.contains(request))
             throw new NotAuthorizedException("Not Authorized");
     }
 
