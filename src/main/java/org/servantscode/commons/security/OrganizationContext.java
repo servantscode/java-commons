@@ -19,7 +19,10 @@ public class OrganizationContext {
 
     public static boolean isMultiTenant() { return REQUIRE_ORG; }
 
-    public static void enableOrganization(String hostName) { LOCAL_INSTANCE.set(new OrganizationContext(hostName)); }
+    public static void enableOrganization(String hostName) {
+        LOG.trace("enabling org: " + hostName);
+        LOCAL_INSTANCE.set(new OrganizationContext(hostName));
+    }
 
     public static Organization getOrganization() {
         OrganizationContext context = LOCAL_INSTANCE.get();
