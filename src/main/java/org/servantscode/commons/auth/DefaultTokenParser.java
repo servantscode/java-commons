@@ -23,6 +23,7 @@ public class DefaultTokenParser implements TokenParser {
 
     @Override
     public DecodedJWT parseToken(String token) {
+        LOG.debug("parsing token: " + token);
         if(isEmpty(token))
             return null;
 
