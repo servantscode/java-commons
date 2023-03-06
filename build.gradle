@@ -35,4 +35,9 @@ publishing {
     }
 }
 
+java {
+    withSourcesJar()
+    // and/or analogously use “withJavadocJar()” to get a “javadocJar” task
+}
+
 task install(dependsOn: publishToMavenLocal)
