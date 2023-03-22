@@ -10,7 +10,7 @@ public class DisableSessionVerifier implements SessionVerifier {
 
     public boolean verifySession(String callingIp, String token, DecodedJWT jwt) {
 
-        LOG.warn("Session Verification DISABLED.");
+        LOG.trace("Session Verification DISABLED.");
 
         return true;
     }
