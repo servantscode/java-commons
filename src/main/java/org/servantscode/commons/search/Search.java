@@ -360,7 +360,7 @@ public class Search {
         @Override
         String getSql() {
             if (clauses.size() == 0)
-                throw new IllegalStateException();
+                throw new IllegalStateException("Search has no clauses.");
 
             if (clauses.size() == 1)
                 return clauses.get(0).getSql();
