@@ -3,6 +3,9 @@ package org.servantscode.commons;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 
+import java.util.Collection;
+import java.util.stream.Collectors;
+
 public class StringUtils {
     public static boolean isEmpty(String s) {
         return s == null || s.trim().isEmpty();
@@ -32,5 +35,12 @@ public class StringUtils {
 
     public static String stripUnsafeTags(String input) {
         return isSet(input)? Jsoup.clean(input, Safelist.relaxed()): input;
+    }
+
+    public static String join(Collection<Integer> ints) {
+        return join(", ", ints);
+    }
+    public static String join(String delimiter, Collection<Integer> ints) {
+        return ints.stream().map(i -> Integer.toString(i)).collect(Collectors.joining(delimiter));
     }
 }
