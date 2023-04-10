@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.security.OrganizationContext;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,7 +47,7 @@ public abstract class FilterableBuilder<T extends FilterableBuilder<T>> extends 
         return (T)this;
     }
 
-    public T withAny(String field, List<? extends Object> ids) {
+    public T withAny(String field, Collection<? extends Object> ids) {
         startFiltering();
         this.wheres.add(String.format("%s in (%s)", field, ids.stream().map(id -> "?").collect(Collectors.joining(","))));
         values.addAll(ids);

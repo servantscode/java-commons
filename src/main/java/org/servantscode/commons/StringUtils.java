@@ -1,5 +1,8 @@
 package org.servantscode.commons;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 
@@ -7,6 +10,8 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 
 public class StringUtils {
+    private static final Logger LOG = LogManager.getLogger(StringUtils.class);
+
     public static boolean isEmpty(String s) {
         return s == null || s.trim().isEmpty();
     }
@@ -40,7 +45,16 @@ public class StringUtils {
     public static String join(Collection<Integer> ints) {
         return join(", ", ints);
     }
+
     public static String join(String delimiter, Collection<Integer> ints) {
         return ints.stream().map(i -> Integer.toString(i)).collect(Collectors.joining(delimiter));
+    }
+
+    public static String toJson(Object o) {
+        try {
+            return ObjectMapperFactory.getMapper().writeValueAsString(o);
+        } catch (JsonProcessingException e) { LOG.error("Could not map object to json...", new Exception()); }
+
+        return "**Unprintable object**";
     }
 }
