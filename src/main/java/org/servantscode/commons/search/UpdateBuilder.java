@@ -2,26 +2,35 @@ package org.servantscode.commons.search;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.filter.Filterable;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.servantscode.commons.StringUtils.isSet;
+
 public class UpdateBuilder extends FilterableBuilder<UpdateBuilder> {
     private static Logger LOG = LogManager.getLogger(UpdateBuilder.class);
 
-    private enum BuilderState { START, TABLE, JOIN, VALUES, WHERE, DONE };
+    private enum BuilderState { START, WITH, TABLE, JOIN, VALUES, WHERE, DONE };
 
     private String table = null;
+    private String with = null;
     private List<String> fields = new LinkedList<>();
     private List<String> joins = new LinkedList<>();
 
     private BuilderState state = BuilderState.START;
 
     public UpdateBuilder() {}
+
+    public UpdateBuilder withCte(String with, Object... values) {
+        setState(BuilderState.WITH);
+        this.with = with;
+        this.values.addAll(Arrays.asList(values));
+        return this;
+    }
+
 
     public UpdateBuilder update(String table) {
         setState(BuilderState.TABLE);
@@ -57,6 +66,8 @@ public class UpdateBuilder extends FilterableBuilder<UpdateBuilder> {
         }
 
         StringBuilder sql = new StringBuilder();
+        if(isSet(with))
+            sql.append("WITH ").append(with).append(" ");
         sql.append("UPDATE ").append(table);
         if(!joins.isEmpty())
             sql.append(" ").append(String.join(" ", joins));
