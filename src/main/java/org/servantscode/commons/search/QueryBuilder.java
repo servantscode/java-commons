@@ -17,7 +17,7 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
 
     private enum BuilderState {START, WITH_CTE, SELECT, FROM, JOIN, WHERE, GROUP, SORT, LIMIT, OFFSET, DONE};
 
-    private List<String> with = new LinkedList<>();
+    private String with = null;
     private List<String> selections = new LinkedList<>();
     private List<String> tables = new LinkedList<>();
     private List<String> joins = new LinkedList<>();
@@ -33,13 +33,14 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
     public QueryBuilder() {
     }
 
-    public QueryBuilder withCte(String... with){
-        return withCte(asList(with));
-    }
 
-    public QueryBuilder withCte(List<String> with) {
+    public QueryBuilder withCte(String with, Object... values) {
+        return withCte(with, asList(values));
+    }
+    public QueryBuilder withCte(String with, List<Object> values){
         setState(BuilderState.WITH_CTE);
-        this.with.addAll(with);
+        this.with = with;
+        this.values.add(values);
         return this;
     }
 
@@ -185,9 +186,7 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
 
         StringBuilder sql = new StringBuilder();
         if(!with.isEmpty())
-            sql.append("WITH ")
-                    .append(String.join(" ", with))
-                    .append(" ");
+            sql.append("WITH ").append(with);
         sql.append("SELECT ");
         if(distinct)
             sql.append("DISTINCT ");
@@ -204,7 +203,7 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
         if(!groupBy.isEmpty())
             sql.append(" GROUP BY ").append(String.join(", ", groupBy));
         if(isSet(sort))
-            sql.append(" ORDER BY " + sort);
+            sql.append(" ORDER BY ").append(sort);
         if(limit)
             sql.append(" LIMIT ?");
         if(offset)
