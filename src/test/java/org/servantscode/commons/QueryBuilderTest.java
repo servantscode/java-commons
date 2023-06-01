@@ -12,7 +12,7 @@ public class QueryBuilderTest {
         QueryBuilder queryBuilder = new QueryBuilder();
         String sql = queryBuilder.withCte("table1").select("e.id").from("entity e").getSql();
 
-        assertEquals(sql, "WITH table1 SELECT e.id FROM entity e");
+        assertEquals("WITH table1 SELECT e.id FROM entity e", sql);
     }
 
 }
