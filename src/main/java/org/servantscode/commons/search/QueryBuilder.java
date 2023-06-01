@@ -185,7 +185,7 @@ public class QueryBuilder extends FilterableBuilder<QueryBuilder> {
         }
 
         StringBuilder sql = new StringBuilder();
-        if(!with.isEmpty())
+        if(isSet(with))
             sql.append("WITH ").append(with).append(" ");
         sql.append("SELECT ");
         if(distinct)
