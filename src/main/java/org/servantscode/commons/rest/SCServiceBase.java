@@ -1,5 +1,6 @@
 package org.servantscode.commons.rest;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.servantscode.commons.db.ConfigDB;
@@ -37,6 +38,13 @@ public class SCServiceBase {
             return -1;
 
         return ((SCPrincipal)securityContext.getUserPrincipal()).getUserId();
+    }
+
+    protected DecodedJWT getJwt(){
+        if(securityContext == null || securityContext.getUserPrincipal() == null)
+            return null;
+
+        return ((SCPrincipal)securityContext.getUserPrincipal()).getJwt();
     }
 
     protected boolean userHasAccess(String permission) {
