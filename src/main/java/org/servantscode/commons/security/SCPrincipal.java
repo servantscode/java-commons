@@ -31,6 +31,10 @@ public class SCPrincipal implements Principal {
         return jwt.getSubject();
     }
 
+    public DecodedJWT getJwt(){
+        return this.jwt;
+    }
+
     public int getUserId() {
         Claim claim = jwt.getClaim("userId");
         if(claim == null)
