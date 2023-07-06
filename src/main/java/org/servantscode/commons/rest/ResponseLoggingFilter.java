@@ -3,16 +3,21 @@ package org.servantscode.commons.rest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
-
+import org.glassfish.jersey.message.internal.ReaderWriter;
 import javax.annotation.Priority;
 import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.ext.Provider;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 @Provider
 @Priority(5000)
-public class ResponseLoggingFilter implements ContainerResponseFilter {
+public class ResponseLoggingFilter implements ContainerResponseFilter, ContainerRequestFilter {
     private static final Logger LOG = LogManager.getLogger(ResponseLoggingFilter.class);
 
     @Override
@@ -45,4 +50,49 @@ public class ResponseLoggingFilter implements ContainerResponseFilter {
 
         LOG.info(msg);
     }
+
+    @Override
+    public void filter(ContainerRequestContext requestContext) {
+
+        StringBuilder sb = new StringBuilder("HTTP REQUEST : ");
+        sb.append("User: ").append(requestContext.getSecurityContext().getUserPrincipal() == null ? "unknown"
+                : requestContext.getSecurityContext().getUserPrincipal());
+        sb.append(" - Path: ").append(requestContext.getUriInfo().getPath());
+        sb.append(" - Header: ").append(requestContext.getHeaders());
+        sb.append(" - Entity: ").append(getEntityBody(requestContext));
+
+        if (requestContext.hasEntity()) {
+            sb.append("Request payload: ").append(getEntityBody(requestContext));
+        }
+        LOG.info(sb);
+    }
+
+    private String getEntityBody(ContainerRequestContext requestContext)
+    {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        InputStream in = requestContext.getEntityStream();
+
+        final StringBuilder b = new StringBuilder();
+        try
+        {
+            ReaderWriter.writeTo(in, out);
+
+            byte[] requestEntity = out.toByteArray();
+            if (requestEntity.length == 0)
+            {
+                b.append(System.lineSeparator());
+            }
+            else
+            {
+                b.append(new String(requestEntity)).append(System.lineSeparator());
+            }
+            // Set the entity stream back as it is read once and is needed in the api.
+            requestContext.setEntityStream( new ByteArrayInputStream(requestEntity) );
+
+        } catch (IOException ex) {
+            //Handle logging error
+        }
+        return b.toString();
+    }
+
 }
