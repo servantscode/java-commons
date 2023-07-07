@@ -17,8 +17,8 @@ import java.io.InputStream;
 
 @Provider
 @Priority(5000)
-public class ResponseLoggingFilter implements ContainerResponseFilter, ContainerRequestFilter {
-    private static final Logger LOG = LogManager.getLogger(ResponseLoggingFilter.class);
+public class LoggingFilter implements ContainerResponseFilter, ContainerRequestFilter {
+    private static final Logger LOG = LogManager.getLogger(LoggingFilter.class);
 
     @Override
     public void filter(ContainerRequestContext requestContext,
