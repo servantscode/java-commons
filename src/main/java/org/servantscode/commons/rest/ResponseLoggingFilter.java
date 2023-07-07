@@ -25,7 +25,9 @@ public class ResponseLoggingFilter implements ContainerResponseFilter, Container
                        ContainerResponseContext responseContext) {
         StringBuilder sb = new StringBuilder("HTTP RESPONSE : ");
         sb.append("Header: ").append(responseContext.getHeaders());
-        sb.append(" - Entity: ").append(responseContext.getEntity().toString());
+        sb.append(" - Entity: ");
+        if(responseContext.getEntity() != null )
+            sb.append(responseContext.getEntity().toString());
         LOG.info(sb);
 
         String path = ThreadContext.get("request.path");
