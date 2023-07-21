@@ -29,4 +29,14 @@ public class PaginatedResponse<T> {
 
     public List<T> getResults() { return results; }
     public void setResults(List<T> results) { this.results = results; }
+
+    @Override
+    public String toString() {
+        return "PaginatedResponse{" +
+                "start=" + start +
+                ", count=" + count +
+                ", totalResults=" + totalResults +
+                ", results=" + results +
+                '}';
+    }
 }
