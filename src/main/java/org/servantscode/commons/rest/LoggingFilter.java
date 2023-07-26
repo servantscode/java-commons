@@ -9,6 +9,7 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -60,7 +61,11 @@ public class LoggingFilter implements ContainerResponseFilter, ContainerRequestF
         sb.append("User: ").append(requestContext.getSecurityContext().getUserPrincipal() == null ? "unknown"
                 : requestContext.getSecurityContext().getUserPrincipal());
         sb.append(" - Path: ").append(requestContext.getUriInfo().getPath());
-        sb.append(" - Header: ").append(requestContext.getHeaders());
+
+        // Remove Auth headers from logging.
+        MultivaluedMap<String, String> headers = requestContext.getHeaders();
+        headers.remove("Authorization");
+        sb.append(" - Header: ").append(headers);
         sb.append(" - Entity: ").append(getEntityBody(requestContext));
 
         if (requestContext.hasEntity()) {
