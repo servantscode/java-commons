@@ -66,9 +66,8 @@ public class LoggingFilter implements ContainerResponseFilter, ContainerRequestF
         MultivaluedMap<String, String> headers = requestContext.getHeaders();
         headers.remove("Authorization");
         sb.append(" - Header: ").append(headers);
-        sb.append(" - Entity: ").append(getEntityBody(requestContext));
 
-        if (requestContext.hasEntity()) {
+        if (requestContext != null || requestContext.hasEntity()) {
             sb.append("Request payload: ").append(getEntityBody(requestContext));
         }
         LOG.info(sb);
