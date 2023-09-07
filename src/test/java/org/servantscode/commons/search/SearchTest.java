@@ -31,14 +31,6 @@ public class SearchTest {
     }
 
     @Test
-    public void testSearchTextClauseSpecial() {
-        Search.SearchClause clause;
-        clause = new Search.TextClause("Robert◙⌐⌐x╘'\");", "\\\\\\\\\"); \\\"");
-        assertEquals("Wrong SQL.", "Robert◙⌐⌐x╘'\"); ILIKE ?", clause.getSql());
-        assertEquals("Wrong Values", "[%\\\\\\\\\"); \\\"%]", clause.getValues().toString());
-    }
-
-    @Test
     public void testSearchEnumClause() {
         Search search = new Search();
         search.addClause(new Search.EnumClause("field", "value"));

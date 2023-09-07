@@ -14,10 +14,13 @@ import static org.servantscode.commons.StringUtils.isSet;
 public class InsertBuilder extends SqlBuilder {
     private static Logger LOG = LogManager.getLogger(QueryBuilder.class);
 
-    private enum BuilderState {START, INTO, VALUES, DONE };
+    private enum BuilderState {START, INTO, FIELDS, VALUES, SELECT, ON, DONE };
 
     private String table = null;
     private List<String> fields = new LinkedList<>();
+    private String selectStatement = null;
+
+    private String conflictResolution = null;
 
     private BuilderState state = BuilderState.START;
 
@@ -26,6 +29,23 @@ public class InsertBuilder extends SqlBuilder {
     public InsertBuilder into(String table) {
         setState(BuilderState.INTO);
         this.table = table;
+        return this;
+    }
+
+    //Manually select fields to add to. Meant to be used in conjunction with a query.
+    //For standard field/values additions use value(key, value);
+    public InsertBuilder fields(String... fields) {
+        setState(BuilderState.FIELDS);
+        this.fields.addAll(asList(fields));
+        return this;
+    }
+
+    public InsertBuilder select(QueryBuilder query) {
+        if(state == BuilderState.VALUES)
+            throw new IllegalStateException("Cannot SELECT after VALUES");
+        setState(BuilderState.SELECT);
+        this.selectStatement = query.getSql();
+        this.values.add(query.values);
         return this;
     }
 
@@ -50,13 +70,25 @@ public class InsertBuilder extends SqlBuilder {
         return this;
     }
 
+    public InsertBuilder onConflict(String resolution) {
+        setState(BuilderState.ON);
+        this.conflictResolution = resolution;
+        return this;
+    }
+
     @Override
     public String getSql() {
         setState(BuilderState.DONE);
         StringBuilder sql = new StringBuilder();
         sql.append("INSERT INTO ").append(table);
         sql.append(" (").append(String.join(", ", fields)).append(") ");
-        sql.append(" VALUES (").append(fields.stream().map(f -> "?").collect(Collectors.joining(", "))).append(")");
+        if(isSet(selectStatement))
+            sql.append(selectStatement);
+        else
+            sql.append(" VALUES (").append(fields.stream().map(f -> "?").collect(Collectors.joining(", "))).append(")");
+
+        if(isSet(conflictResolution))
+            sql.append(" ON CONFLICT " + conflictResolution);
         return sql.toString();
     }
 
